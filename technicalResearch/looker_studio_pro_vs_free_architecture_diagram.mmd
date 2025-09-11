@@ -1,0 +1,26 @@
+```mermaid
+flowchart TD
+  subgraph Pro版
+    GC[Google Cloud IAM]
+    Org[組織]
+    TW[チームワークスペース]
+    RS[レポート／データソース]
+    Roles[マネージャー<br>コンテンツ管理者<br>投稿者／閲覧者]
+
+    GC --> Org
+    Org --> TW
+    Org --> RS
+    TW --> Roles
+    RS --> Roles
+  end
+
+  subgraph 無料版
+    Personal[個人アカウント]
+    R2[レポート／データソース]
+    Leave[退職時に移行作業が必要]
+    Worker[作業者個人]
+
+    Personal --> R2
+    R2 --> Leave
+    Leave --> Worker
+  end

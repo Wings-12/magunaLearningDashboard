@@ -1,0 +1,91 @@
+@startuml screenTransitionDiagram
+' 横配置にして見やすく
+left to right direction
+skinparam packageStyle rectangle
+skinparam defaultFontName "Meiryo"
+
+' --- 認証ブロック ---
+package "認証" #E8F6FF {
+  rectangle "ログイン画面" as login #E8F6FF
+  rectangle "パスワードリセット画面" as reset #E8F6FF
+  rectangle "初回パスワード設定画面" as first_pw #E8F6FF
+  rectangle "アカウントロックアウト通知画面" as lockout #E8F6FF
+  rectangle "ログアウト" as logout #FFE7D6
+}
+
+' --- システム系ブロック ---
+package "システム" #FFDCE0 {
+  rectangle "404エラーページ" as error404 #FFDCE0
+  rectangle "403無権限エラーページ" as error403 #FFDCE0
+  rectangle "メンテナンス画面" as maint #FFDCE0
+  rectangle "アップデート通知画面" as update #FFDCE0
+}
+
+' ダッシュボード（メイン）
+rectangle "ダッシュボードメイン(クラス)画面" as dashboard #E8FFEA
+
+' ダッシュボード内の主要画面
+rectangle "生徒詳細画面" as student_detail #E8FFEA
+rectangle "クラス別統計" as class_stats #E8FFEA
+rectangle "生徒比較画面" as student_compare #E8FFEA
+
+' --- 管理者機能 ---
+package "管理者機能" #FFE8EE {
+  rectangle "管理者メニュー" as admin_menu #FFE8EE
+  rectangle "教師管理者アカウント管理" as teacher_mgmt #FFE8EE
+  rectangle "クラス管理画面" as class_mgmt #FFE8EE
+  rectangle "クラス作成" as class_create #FFFFFF
+  rectangle "生徒アカウント管理画面" as student_mgmt #FFE8EE
+  rectangle "生徒割り当て" as student_assign #FFFFFF
+}
+
+' --- 設定 ---
+package "設定" #F2F2F2 {
+  rectangle "設定画面" as settings #FFFFFF
+  rectangle "ユーザープロフィール設定" as profile #FFFFFF
+  rectangle "パスワード変更" as pw_change #FFFFFF
+  rectangle "通知設定" as notify #FFFFFF
+  rectangle "表示設定" as display #FFFFFF
+}
+
+' --- ヘルプ ---
+package "ヘルプ" #F2F2F2 {
+  rectangle "ヘルプサポート画面" as help #FFFFFF
+  rectangle "使い方ガイド" as guide #FFFFFF
+  rectangle "よくある質問" as faq #FFFFFF
+  rectangle "お問い合わせフォーム" as contact #FFFFFF
+  rectangle "システム情報" as sysinfo #FFFFFF
+}
+
+' --- 遷移 ---
+login --> reset
+login --> first_pw
+login --> lockout
+login --> logout
+
+login --> dashboard
+
+dashboard --> student_detail
+dashboard --> class_stats
+dashboard --> student_compare
+
+dashboard --> admin_menu
+admin_menu --> teacher_mgmt
+admin_menu --> class_mgmt
+class_mgmt --> class_create
+admin_menu --> student_mgmt
+student_mgmt --> student_assign
+
+dashboard --> settings
+settings --> profile
+settings --> pw_change
+settings --> notify
+settings --> display
+
+dashboard --> help
+help --> guide
+help --> faq
+help --> contact
+help --> sysinfo
+
+@enduml
