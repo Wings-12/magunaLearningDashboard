@@ -1,0 +1,15 @@
+skinparam defaultFontName "Meiryo"
+cloud "Google Cloud" #E8FFEA {
+    rectangle "BigQuery DTS" as dts
+    database "BigQuery" as bq
+}
+cloud "さくらクラウド" {
+    database "PostgreSQL" as postgres
+}
+dts -> postgres : 1. 定期的に接続・データ取得
+dts -> bq : 2. BigQueryへデータ転送
+note right of dts
+  公開IPアドレス経由での
+  接続設定が必要
+end note
+@enduml

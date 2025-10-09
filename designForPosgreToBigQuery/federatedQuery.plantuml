@@ -1,0 +1,18 @@
+@startuml approach3
+left to right direction
+!define LIGHTBLUE E8F6FF
+!define LIGHTGREEN E8FFEA
+skinparam defaultFontName "Meiryo"
+skinparam linetype ortho
+actor User
+cloud "Google Cloud" #LIGHTGREEN {
+    database "BigQuery" as bq
+}
+cloud "さくらクラウド" as sakura_cloud  {
+    database "PostgreSQL" as postgres
+}
+User <-up- bq : 1. クエリ実行
+bq <- postgres : 2. 外部クエリ発行 (EXTERNAL_QUERY)
+postgres <-- bq : 3. 結果を返却
+bq <-down- User : 4. クエリ結果表示
+@enduml

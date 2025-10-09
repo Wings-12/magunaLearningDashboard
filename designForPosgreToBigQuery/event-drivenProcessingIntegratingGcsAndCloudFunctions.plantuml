@@ -1,0 +1,18 @@
+@startuml approach2
+!define LIGHTBLUE E8F6FF
+!define LIGHTGREEN E8FFEA
+skinparam defaultFontName "Meiryo"
+cloud "さくらクラウド" {
+    rectangle "Pythonスクリプト" as script
+    database "PostgreSQL" as postgres
+}
+cloud "Google Cloud" #LIGHTGREEN {
+    rectangle "Cloud Storage" as gcs
+    collections "Cloud Functions" as functions
+    database "BigQuery" as bq
+}
+script -> postgres : 1. データ抽出
+script -> gcs : 2. ファイルアップロード
+gcs -> functions : 3. イベントをトリガー
+functions -> bq : 4. データロード
+@enduml

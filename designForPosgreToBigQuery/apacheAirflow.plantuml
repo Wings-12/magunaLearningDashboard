@@ -1,0 +1,34 @@
+@startuml approach4
+!define LIGHTGREEN E8FFEA
+skinparam defaultFontName "Meiryo"
+skinparam padding 10
+skinparam nodesep 80
+skinparam ranksep 80
+
+cloud "Cloud Composer\n(Airflow)" as airflow #LIGHTGREEN {
+    agent "Scheduler" as scheduler
+    rectangle "DAG" as dag
+}
+
+cloud "さくらクラウド" {
+    database "PostgreSQL" as postgres
+}
+
+cloud "Google Cloud" #LIGHTGREEN {
+    rectangle "Cloud Storage" as gcs
+    database "BigQuery" as bq
+}
+
+scheduler -down-> dag : 1. スケジュール実行
+dag -down-> postgres : 2. PostgresToGCS\nOperator実行
+postgres -down-> gcs : データ抽出・転送
+gcs -down-> bq : データロード
+dag -down-> gcs : 3. GCSToBigQuery\nOperator実行
+
+note right of dag
+  - PostgresToGCSOperator
+  - GCSToBigQueryOperator
+  などのタスクを定義
+end note
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml postgres_to_bigquery_pipeline
+
+skinparam defaultFontName "Meiryo"
+skinparam rectangle {
+  BackgroundColor #F8F9FA
+  BorderColor #333333
+  BorderThickness 1
+}
+skinparam database {
+  BackgroundColor #E8F6FF
+  BorderColor #333333
+}
+skinparam cloud {
+  BackgroundColor #F8F9FA
+  BorderColor #333333
+}
+skinparam agent {
+    BackgroundColor #FFE8EE
+}
+
+title アプローチ1：Pythonバッチ処理による一括連携フロー
+
+cloud "さくらクラウド" as sakura_cloud {
+    agent "cron (スケジューラ)" as cron
+    rectangle "Pythonスクリプト\n(bq_load_script.py)" as python_script #FFFFFF
+    database "PostgreSQL" as postgres
+}
+
+cloud "Google Cloud" as gcp #E8FFEA {
+    rectangle "Cloud Storage (GCS)" as gcs #FFF3CD
+    database "BigQuery" as bq
+}
+
+cron -[#D32F2F]-> python_script : 1. 定期実行
+python_script -> postgres : 2. データ抽出 (SELECT)
+postgres --> python_script : データ
+note on link : pandas DataFrame経由で\nCSVファイルとして保存
+
+python_script -> gcs : 3. CSVファイルアップロード
+python_script -> bq : 4. ロードジョブ実行依頼
+gcs -> bq : 5. GCSからデータをロード
+
+note right of cron
+  毎日午前3時など
+  指定した時間に
+  スクリプトを起動
+end note
+
+note right of python_script
+  - psycopg2でDB接続
+  - pandasでデータ操作
+  - google-cloud-sdkで
+    GCS/BigQueryを操作
+end note
+
+@enduml
