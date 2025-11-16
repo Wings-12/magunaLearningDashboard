@@ -111,10 +111,16 @@
 
                 <!-- 1. KPIカード -->
                 <h2 class="text-xl font-semibold text-slate-800 mb-4">生徒1人あたり 月間平均サマリー</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+                    <!-- 時間 -->
+                    <div class="kpi-card bg-white p-5 rounded-lg border border-slate-200">
+                        <div class="text-sm font-medium text-slate-500">全体プレー時間</div>
+                        <div class="text-3xl font-bold text-blue-600 mt-1" id="kpi-time">8.3h</div>
+                        <div class="text-xs text-slate-500 mt-2">※従来の自主学習時間(1日15分)比で <strong class="text-blue-600">約30%</strong> の学習時間が純増しています。</div>
+                    </div>
                     <!-- 単語 -->
                     <div class="kpi-card bg-white p-5 rounded-lg border border-slate-200">
-                        <div class="text-sm font-medium text-slate-500">習得単語数</div>
+                        <div class="text-sm font-medium text-slate-500">習得単語数（中学3年間目標: 1800語）</div>
                         <div class="w-full flex items-center pt-2">
                             <div class="w-2/3">
                                 <canvas id="kpi-words-chart"></canvas>
@@ -124,42 +130,33 @@
                                 <div class="text-xs text-slate-500">達成</div>
                             </div>
                         </div>
+                        <div class="text-xs text-slate-500 mt-2">※1ヶ月で中学3年間の目標の <strong class="text-green-600">15%</strong> に到達しています。</div>
                     </div>
                     <!-- 発話 -->
                     <div class="kpi-card bg-white p-5 rounded-lg border border-slate-200">
                         <div class="text-sm font-medium text-slate-500">AI英会話 プレー時間（分）</div>
                         <div class="text-3xl font-bold text-red-600 mt-1" id="kpi-speaking">158 分</div>
+                        <div class="text-xs text-slate-500 mt-2">※授業内だけでは実現困難な、<strong class="text-red-600">アウトプット時間</strong>です。</div>
                     </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <div class="space-y-3">
-                        <div class="text-base font-semibold text-slate-700 p-3 bg-white rounded-lg border border-slate-200">中学3年間目標: 1800語</div>
-                        <div class="text-sm md:text-base text-slate-600 p-3 bg-white rounded-lg border border-slate-200">※1ヶ月で中学3年間の目標の <strong class="text-green-600">15%</strong> に到達しています。</div>
-                    </div>
-                    <div class="text-sm md:text-base text-slate-600 p-3 bg-white rounded-lg border border-slate-200">※授業内だけでは実現困難な、<strong class="text-red-600">アウトプット時間</strong>です。</div>
                 </div>
 
                 <!-- 2. 学習効果と内訳 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+                <div class="grid grid-cols-2 gap-4 md:gap-6 mb-8">
                     <!-- 学習効果 -->
-                    <div class="flex flex-col space-y-3">
-                        <div class="chart-container">
-                            <h3 class="text-lg font-semibold text-slate-800 mb-4">学習効果 (プレー時間 vs 習得単語数)</h3>
-                            <canvas id="comparison-bar-chart"></canvas>
-                        </div>
-                        <div class="text-sm md:text-base font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg text-center">
+                    <div class="chart-container">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">学習効果 (プレー時間 vs 習得単語数)</h3>
+                        <canvas id="comparison-bar-chart"></canvas>
+                        <p class="mt-4 text-center text-sm md:text-base font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg">
                             プレー時間が<strong class="text-blue-600">最長の生徒</strong>は、<strong class="text-slate-500">最短の生徒</strong>に比べ、<strong class="text-green-600">単語習得数が約5倍</strong>に増加しています。
-                        </div>
+                        </p>
                     </div>
                     <!-- 学習の内訳 -->
-                    <div class="flex flex-col space-y-3">
-                        <div class="chart-container">
-                            <h3 class="text-lg font-semibold text-slate-800 mb-4">学習時間の内訳 (ゲームプレー = 学習活動)</h3>
-                            <canvas id="breakdown-chart"></canvas>
-                        </div>
-                        <div class="text-sm md:text-base font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg text-center">
+                    <div class="chart-container">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">学習時間の内訳 (ゲームプレー = 学習活動)</h3>
+                        <canvas id="breakdown-chart"></canvas>
+                         <p class="mt-4 text-center text-sm md:text-base font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg">
                             「遊び」に見える時間も、その<strong class="text-blue-600">100%</strong>が4技能に紐づく<strong class="text-green-600">「学習活動」</strong>です。
-                        </div>
+                        </p>
                     </div>
                 </div>
 
