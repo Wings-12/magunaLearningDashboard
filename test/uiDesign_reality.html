@@ -611,9 +611,14 @@
       const avgPlayTime = getAverage(filteredData, 'x');
       const avgAiTime = getAverage(filteredData, 'skills.ai'); // 'skills.ai' を使用
 
-      document.getElementById('kpi-play-time').innerText = `${avgPlayTime.toFixed(1)}h`;
-      // NaNチェックを追加
-      document.getElementById('kpi-ai-time').innerText = isNaN(avgAiTime) ? '0 分' : `${avgAiTime.toFixed(0)} 分`;
+      const playTimeEl = document.getElementById('kpi-play-time');
+      if (playTimeEl) {
+        playTimeEl.innerText = `${avgPlayTime.toFixed(1)}h`;
+      }
+      const aiTimeEl = document.getElementById('kpi-ai-time');
+      if (aiTimeEl) {
+        aiTimeEl.innerText = isNaN(avgAiTime) ? '0 分' : `${avgAiTime.toFixed(0)} 分`;
+      }
 
       createKpiWordsChart(filteredData);
       createComparisonBarChart(filteredData);
