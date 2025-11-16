@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マグナ学習管理ダッシュボード (モックアップ)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .kpi-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            background: #ffffff;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .top-class-card {
+            transition: all 0.3s ease;
+        }
+        .top-class-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            cursor: pointer;
+        }
+        .student-list-header th {
+            cursor: pointer;
+            user-select: none;
+        }
+        .student-list-header th:hover {
+            background-color: #f3f4f6;
+        }
+        .student-list-header .sort-asc::after {
+            content: ' ▲';
+            font-size: 0.75em;
+        }
+        .student-list-header .sort-desc::after {
+            content: ' ▼';
+            font-size: 0.75em;
+        }
+        #student-list tr {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        /* 指導メモの擬似タブ */
+        .memo-tab-button {
+            transition: all 0.2s ease;
+        }
+        .memo-tab-button.active {
+            background-color: #3b82f6;
+            color: #ffffff;
+        }
+        .memo-tab-button:not(.active) {
+            background-color: #e5e7eb;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
+        <!-- ヘッダーとタブ -->
+        <header class="bg-slate-800 text-white p-6">
+            <h1 class="text-2xl md:text-3xl font-bold">マグナとふしぎの少女 学習データダッシュボード</h1>
+            <p class="text-sm text-slate-300 mt-1">「熱中」が「学習成果」に変わる瞬間を可視化します。</p>
+        </header>
+
+        <nav class="flex border-b border-slate-200">
+            <button id="school-tab" class="tab-button active text-sm md:text-base py-4 px-6 border-b-4 border-transparent">
+                学校全体
+            </button>
+            <button id="class-tab" class="tab-button text-sm md:text-base py-4 px-6 border-b-4 border-transparent">
+                クラス詳細
+            </button>
+            <button id="student-tab" class="tab-button text-sm md:text-base py-4 px-6 border-b-4 border-transparent">
+                生徒詳細
+            </button>
+        </nav>
+
+        <!-- コンテンツエリア -->
+        <main classs="p-4 md:p-8">
+
+            <!-- 学校全体ビュー -->
+            <div id="school-view" class="view-content p-4 md:p-8">
+                <!-- 学年フィルタ -->
+                <div class="mb-6">
+                    <label for="grade-filter" class="text-sm font-medium text-slate-700 mr-2">学年：</label>
+                    <select id="grade-filter" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="all" selected>すべての学年</option>
+                        <option value="1年生">1年生</option>
+                        <option value="2年生">2年生</option>
+                        <option value="3年生">3年生</option>
+                    </select>
+                </div>
+
+                <!-- 1. KPIカード -->
+                <h2 class="text-xl font-semibold text-slate-800 mb-4">生徒1人あたり 月間平均サマリー</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+                    <!-- 単語 -->
+                    <div class="kpi-card bg-white p-5 rounded-lg border border-slate-200">
+                        <div class="text-sm font-medium text-slate-500">習得単語数（中学3年間目標: 1800語）</div>
+                        <div class="w-full flex items-center pt-2">
+                            <div class="w-2/3">
+                                <canvas id="kpi-words-chart"></canvas>
+                            </div>
+                            <div class="w-1/3 text-right">
+                                <div class="text-2xl font-bold text-green-600" id="kpi-words-text">15%</div>
+                                <div class="text-xs text-slate-500">達成</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-2">※1ヶ月で中学3年間の目標の <strong class="text-green-600">15%</strong> に到達しています。</div>
+                    </div>
+                    <!-- 発話 -->
+                    <div class="kpi-card bg-white p-5 rounded-lg border border-slate-200">
+                        <div class="text-sm font-medium text-slate-500">AI英会話 プレー時間（分）</div>
+                        <div class="text-3xl font-bold text-red-600 mt-1" id="kpi-speaking">158 分</div>
+                        <div class="text-xs text-slate-500 mt-2">※授業内だけでは実現困難な、<strong class="text-red-600">アウトプット時間</strong>です。</div>
+                    </div>
+                </div>
+
+                <!-- 2. 学習効果と内訳 -->
+                <div class="grid grid-cols-2 gap-4 md:gap-6 mb-8">
+                    <!-- 学習効果 -->
+                    <div class="chart-container">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">学習効果 (プレー時間 vs 習得単語数)</h3>
+                        <canvas id="comparison-bar-chart"></canvas>
+                        <p class="mt-4 text-center text-sm md:text-base font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg">
+                            プレー時間が<strong class="text-blue-600">最長の生徒</strong>は、<strong class="text-slate-500">最短の生徒</strong>に比べ、<strong class="text-green-600">単語習得数が約5倍</strong>に増加しています。
+                        </p>
+                    </div>
+                    <!-- 学習の内訳 -->
+                    <div class="chart-container">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">学習時間の内訳 (ゲームプレー = 学習活動)</h3>
+                        <canvas id="breakdown-chart"></canvas>
+                         <p class="mt-4 text-center text-sm md:text-base font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg">
+                            「遊び」に見える時間も、その<strong class="text-blue-600">100%</strong>が4技能に紐づく<strong class="text-green-600">「学習活動」</strong>です。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 3. トップクラス -->
+                <h2 class="text-xl font-semibold text-slate-800 mb-4">指標別 No.1 クラス (活用事例の発見)</h2>
+                <div id="top-class-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+                    <!-- JSで生成されます -->
+                </div>
+
+            </div>
+
+            <!-- クラス詳細ビュー -->
+            <div id="class-view" class="view-content p-4 md:p-8" style="display: none;">
+                <!-- クラスフィルタ -->
+                <div class="mb-6">
+                    <label for="class-filter" class="text-sm font-medium text-slate-700 mr-2">クラス：</label>
+                    <select id="class-filter" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="1-1">1年1組</option>
+                        <option value="1-2">1年2組</option>
+                        <option value="2-1">2年1組</option>
+                        <option value="3-1">3年1組</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 md:gap-6">
+                    <!-- 4技能バランス -->
+                    <div class="chart-container">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">4技能バランス (クラス平均 vs 学年平均)</h3>
+                        <canvas id="skill-bar-chart"></canvas>
+                    </div>
+
+                    <!-- 時系列推移 -->
+                    <div class="chart-container">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">4技能 習得数の月別推移</h3>
+                        <canvas id="time-series-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 生徒一覧 -->
+                <div class="chart-container mt-6">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-4">生徒一覧</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                <tr class="student-list-header">
+                                    <th data-sort="name" class="p-3">生徒名</th>
+                                    <th data-sort="x" class="p-3 sort-desc">今月の学習時間</th>
+                                    <th data-sort="diff_x" class="p-3">先月比 (時間)</th>
+                                    <th data-sort="y" class="p-3">今月の習得単語数</th>
+                                    <th data-sort="diff_y" class="p-3">先月比 (単語)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-list" class="divide-y divide-slate-200">
+                                <!-- JSで生成されます -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- クラス指導メモ (新規追加) -->
+                <div id="class-memo-container" class="chart-container mt-6">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-4">クラス指導メモ</h3>
+                    <!-- メモの擬似タブ -->
+                    <div class="flex border-b border-slate-200 mb-4">
+                        <button id="class-memo-tab-input" class="memo-tab-button active text-sm font-medium py-2 px-4 rounded-t-lg">
+                            📝 メモを入力
+                        </button>
+                        <button id="class-memo-tab-history" class="memo-tab-button text-sm font-medium py-2 px-4 rounded-t-lg">
+                            📖 メモ履歴
+                        </button>
+                    </div>
+                    <!-- メモ入力欄 -->
+                    <div id="class-memo-input-area">
+                        <textarea class="w-full p-3 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" rows="4" placeholder="（例）1-1組は「話す」が強いが「書く」が学年平均以下。来週はバトルの「書く」モードを推奨してみよう。"></textarea>
+                        <button class="mt-3 bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors">
+                            メモを保存
+                        </button>
+                    </div>
+                    <!-- メモ履歴欄 (ダミー) -->
+                    <div id="class-memo-history-area" style="display: none;">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                <tr>
+                                    <th class="p-3 w-1/4">日付</th>
+                                    <th class="p-3 w-3/4">メモ内容</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr>
+                                    <td class="p-3 align-top">2025/08/15</td>
+                                    <td class="p-3 whitespace-pre-wrap">夏休み明け。全体的に「聞く」のスコアが伸びている。ストーリーをしっかり進めた様子。</td>
+                                </tr>
+                                 <tr>
+                                    <td class="p-3 align-top">2025/08/01</td>
+                                    <td class="p-3 whitespace-pre-wrap">AI英会話の活用がクラス全体でまだ少ない。夏休みの課題としてAI英会話を毎日10分推奨する。</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 生徒詳細ビュー -->
+            <div id="student-view" class="view-content p-4 md:p-8" style="display: none;">
+                <!-- フィルタ (新規追加) -->
+                <div class="flex flex-wrap items-center gap-4 mb-6">
+                    <div>
+                        <label for="student-view-class-filter" class="text-sm font-medium text-slate-700 mr-2">クラス：</label>
+                        <select id="student-view-class-filter" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <!-- JSで生成 -->
+                        </select>
+                    </div>
+                     <div>
+                        <label for="student-view-student-filter" class="text-sm font-medium text-slate-700 mr-2">生徒：</label>
+                        <select id="student-view-student-filter" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <!-- JSで生成 -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 生徒サマリー (ヘッダーから移動) -->
+                <div id="student-summary-content" style="display: none;"> <!-- 生徒選択時のみ表示 -->
+                    <h2 id="student-name-header" class="text-2xl font-bold text-slate-800 mb-4"></h2>
+
+                    <!-- 1. 生徒KPIサマリー -->
+                    <div class="grid grid-cols-2 gap-4 md:gap-6 mb-8">
+                        <div class="kpi-card bg-white p-5 rounded-lg border border-slate-200">
+                            <div class="text-sm font-medium text-slate-500">今月の学習時間</div>
+                            <div class="flex items-baseline mt-1">
+                                <div class="text-3xl font-bold text-blue-600" id="student-kpi-time"></div>
+                                <div class="text-lg font-medium ml-2" id="student-kpi-time-diff"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-card bg-white p-5 rounded-lg border border-slate-200">
+                            <div class="text-sm font-medium text-slate-500">今月の習得単語数</div>
+                            <div class="flex items-baseline mt-1">
+                                <div class="text-3xl font-bold text-green-600" id="student-kpi-words"></div>
+                                <div class="text-lg font-medium ml-2" id="student-kpi-words-diff"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. ハイブリッド分析 (レーダー + 散布図 + 内訳) -->
+                    <div class="grid grid-cols-2 gap-4 md:gap-6 mb-8">
+                        <!-- 6技能レーダーチャート -->
+                        <div class="chart-container">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">6技能バランス (個人 vs クラス平均)</h3>
+                            <canvas id="student-radar-chart"></canvas>
+                            <p class="mt-4 text-center text-sm font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg">
+                                <strong class="text-blue-600">青色（本人）</strong>と<strong class="text-slate-500">グレー（クラス平均）</strong>を比べ、得意・不得意なスキルを把握できます。
+                            </p>
+                        </div>
+
+                        <!-- 学習時間の内訳 -->
+                        <div class="chart-container">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4">学習時間の内訳 (個人の学習スタイル)</h3>
+                            <canvas id="student-breakdown-chart"></canvas>
+                            <p class="mt-4 text-center text-sm font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg">
+                                <strong class="text-blue-600">ストーリー（聞く）</strong>中心か、<strong class="text-red-600">バトル（話す）</strong>中心か、学習の「偏り」＝「好み」が分かります。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- クラス内ポジション -->
+                    <div class="chart-container mb-8">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">クラス内ポジション (時間 vs 単語)</h3>
+                        <canvas id="student-scatter-chart"></canvas>
+                        <p class="mt-4 text-center text-sm font-semibold text-slate-700 p-3 bg-slate-100 rounded-lg">
+                            <strong class="text-blue-600">青い点（本人）</strong>がクラス（グレーの点）の中でどの位置にいるかで、学習タイプが分かります。<br>
+                            （例：<strong class="text-green-600">右上＝努力型</strong>, <strong class="text-red-600">右下＝要フォロー（時間↑単語↓）</strong>）
+                        </p>
+                    </div>
+
+                    <!-- 生徒指導メモ (ページ下部に移動) -->
+                    <div id="student-memo-container" class="chart-container mb-8">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4">個別フォローアップ・プラン</h3>
+                        <!-- メモの擬似タブ -->
+                        <div class="flex border-b border-slate-200 mb-4">
+                            <button id="student-memo-tab-input" class="memo-tab-button active text-sm font-medium py-2 px-4 rounded-t-lg">
+                                📝 メモを入力
+                            </button>
+                            <button id="student-memo-tab-history" class="memo-tab-button text-sm font-medium py-2 px-4 rounded-t-lg">
+                                📖 メモ履歴
+                            </button>
+                        </div>
+                        <!-- メモ入力欄 -->
+                        <div id="student-memo-input-area">
+                            <textarea class="w-full p-3 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" rows="4" placeholder="（例）学習時間（右上）はクラス最長だが、単語習得が追いついていない（右下）。内訳を見るとストーリー特化（聞く・読む）が80%。本人の強みを認めつつ、バトル（話す・書く）でのアウトプットを促す声かけを行う。"></textarea>
+                            <button class="mt-3 bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors">
+                                メモを保存
+                            </button>
+                        </div>
+                        <!-- メモ履歴欄 (ダミー) -->
+                        <div id="student-memo-history-area" style="display: none;">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                    <tr>
+                                        <th class="p-3 w-1/4">日付</th>
+                                        <th class="p-3 w-3/4">メモ内容</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    <tr>
+                                        <td class="p-3 align-top">2025/08/15</td>
+                                        <td class="p-3 whitespace-pre-wrap">学習時間・単語数ともに先月比マイナス。「要フォローアップ」。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- グローバル変数とダミーデータ ---
+
+        // 4技能カラー
+        const SKILL_COLORS = {
+            listening: 'rgba(66, 133, 244, 0.8)', // 青
+            speaking: 'rgba(234, 67, 53, 0.8)', // 赤
+            reading: 'rgba(52, 168, 83, 0.8)', // 緑
+            writing: 'rgba(251, 188, 5, 0.8)', // 黄
+            phrase: 'rgba(156, 39, 176, 0.8)', // 紫
+            ai_time: 'rgba(255, 111, 0, 0.8)', // オレンジ
+            goal: 'rgba(224, 224, 224, 0.7)' // グレー (目標)
+        };
+
+        // 全生徒のダミーデータ
+        const allStudentData = [
+            { id: 'S001', name: '生徒 A1', classId: '1-1', grade: '1年生', x: 25.5, y: 510, prev_x: 20.0, prev_y: 400, skills: { l: 150, s: 120, r: 140, w: 100 }, phrase: 50, ai_time: 120 },
+            { id: 'S002', name: '生徒 A2', classId: '1-1', grade: '1年生', x: 22.0, y: 450, prev_x: 21.0, prev_y: 410, skills: { l: 120, s: 110, r: 120, w: 100 }, phrase: 45, ai_time: 110 },
+            { id: 'S003', name: '生徒 A3', classId: '1-1', grade: '1年生', x: 18.0, y: 380, prev_x: 19.0, prev_y: 390, skills: { l: 100, s: 90, r: 100, w: 90 }, phrase: 40, ai_time: 100 },
+            { id: 'S004', name: '生徒 A4', classId: '1-1', grade: '1年生', x: 5.0, y: 100, prev_x: 8.0, prev_y: 150, skills: { l: 30, s: 20, r: 30, w: 20 }, phrase: 10, ai_time: 30 },
+            { id: 'S005', name: '生徒 B1', classId: '1-2', grade: '1年生', x: 15.0, y: 300, prev_x: 14.0, prev_y: 280, skills: { l: 80, s: 70, r: 90, w: 60 }, phrase: 30, ai_time: 80 },
+            { id: 'S006', name: '生徒 B2', classId: '1-2', grade: '1年生', x: 12.0, y: 250, prev_x: 10.0, prev_y: 200, skills: { l: 70, s: 60, r: 70, w: 50 }, phrase: 25, ai_time: 70 },
+            { id: 'S007', name: '生徒 C1', classId: '2-1', grade: '2年生', x: 20.0, y: 420, prev_x: 18.0, prev_y: 380, skills: { l: 110, s: 100, r: 110, w: 100 }, phrase: 42, ai_time: 115 },
+            { id: 'S008', name: '生徒 C2', classId: '2-1', grade: '2年生', x: 17.0, y: 350, prev_x: 17.5, prev_y: 360, skills: { l: 90, s: 80, r: 90, w: 90 }, phrase: 35, ai_time: 90 },
+            { id: 'S009', name: '生徒 D1', classId: '3-1', grade: '3年生', x: 30.0, y: 600, prev_x: 25.0, prev_y: 500, skills: { l: 180, s: 150, r: 170, w: 100 }, phrase: 60, ai_time: 150 },
+            { id: 'S010', name: '生徒 D2', classId: '3-1', grade: '3年生', x: 3.0, y: 65, prev_x: 3.5, prev_y: 70, skills: { l: 20, s: 10, r: 20, w: 15 }, phrase: 5, ai_time: 10 },
+        ];
+
+        const allClassData = [
+            { id: '1-1', name: '1年1組' },
+            { id: '1-2', name: '1年2組' },
+            { id: '2-1', name: '2年1組' },
+            { id: '3-1', name: '3年1組' }
+        ];
+
+        // チャートインスタンスを保持
+        const charts = {
+            kpiWords: null,
+            comparisonBar: null,
+            breakdown: null,
+            skillBar: null,
+            timeSeries: null,
+            // 生徒詳細グラフ
+            studentRadar: null,
+            studentScatter: null,
+            studentBreakdown: null
+        };
+
+        let currentStudentId = null; // 現在表示中の生徒ID
+
+        // --- ユーティリティ関数 ---
+
+        // 平均を計算
+        function getAverage(data, key) {
+            if (!data || data.length === 0) return 0;
+            const total = data.reduce((sum, item) => sum + item[key], 0);
+            return total / data.length;
+        }
+
+        // 4技能の合計/平均を計算 (ネスト対応)
+        function getSkillAverage(data, dataKey) {
+             if (!data || data.length === 0) return 0;
+             let total = 0;
+             if (dataKey.includes('.')) {
+                const [key1, key2] = dataKey.split('.');
+                total = data.reduce((sum, item) => sum + (item[key1] ? item[key1][key2] : 0), 0);
+             } else {
+                total = data.reduce((sum, item) => sum + (item[dataKey] ? item[dataKey] : 0), 0);
+             }
+             return total / data.length;
+        }
+
+
+        // --- 学校全体ビュー ---
+
+        // 1. KPI 単語数ドーナツ
+        function createKpiWordsChart(filteredData) {
+            const avgWords = getAverage(filteredData, 'y');
+            const goal = 1800; // 中学3年目標
+            const percentage = (avgWords / goal) * 100;
+            const remaining = 100 - percentage;
+
+            document.getElementById('kpi-words-text').textContent = `${percentage.toFixed(0)}%`;
+
+            const ctx = document.getElementById('kpi-words-chart').getContext('2d');
+            if (charts.kpiWords) charts.kpiWords.destroy();
+            charts.kpiWords = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [percentage, remaining > 0 ? remaining : 0],
+                        backgroundColor: [SKILL_COLORS.reading, SKILL_COLORS.goal],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        }
+
+        // 2. 学習効果 (最短 vs 最長) 棒グラフ
+        function createComparisonBarChart(filteredData) {
+            if (!filteredData || filteredData.length === 0) {
+                 if (charts.comparisonBar) charts.comparisonBar.destroy(); // データない場合はクリア
+                return;
+            }
+
+            const sorted = [...filteredData].sort((a, b) => a.x - b.x);
+            const minStudent = sorted[0];
+            const maxStudent = sorted[sorted.length - 1];
+
+            if (!minStudent || !maxStudent) return; // データ不足
+
+            const ctx = document.getElementById('comparison-bar-chart').getContext('2d');
+            if (charts.comparisonBar) charts.comparisonBar.destroy();
+            charts.comparisonBar = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['プレー時間', '習得単語数'], // ★ X軸のラベル
+                    datasets: [
+                        {
+                            label: `最短生徒 (月${minStudent.x.toFixed(1)}h)`,
+                            data: [minStudent.x, minStudent.y],
+                            backgroundColor: 'rgba(107, 114, 128, 0.7)', // Gray
+                            borderColor: 'rgba(107, 114, 128, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: `最長生徒 (月${maxStudent.x.toFixed(1)}h)`,
+                            data: [maxStudent.x, maxStudent.y],
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)', // Blue
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    // indexAxis: 'y', // ★★★ 削除しました ★★★
+                    scales: {
+                        x: { beginAtZero: true }, // X軸
+                        y: { beginAtZero: true }  // Y軸
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { enabled: false } // シンプルにするため無効化
+                    }
+                }
+            });
+
+            // ★ 結論テキストは変更しない
+            const conclusionEl = document.getElementById('comparison-bar-chart').closest('.chart-container').querySelector('p');
+            if (conclusionEl) {
+                const ratio = (maxStudent.y / minStudent.y) || 0;
+                 conclusionEl.innerHTML = `
+                    プレー時間が<strong class="text-blue-600">最長の生徒</strong>は、<strong class="text-slate-500">最短の生徒</strong>に比べ、<strong class="text-green-600">単語習得数が約${ratio.toFixed(1)}倍</strong>に増加しています。
+                 `;
+            }
+        }
+
+        // 3. 学習内訳ドーナツ (学校/学年)
+        function createBreakdownChart(filteredData) {
+             if (!filteredData || filteredData.length === 0) {
+                 if (charts.breakdown) charts.breakdown.destroy(); // データない場合はクリア
+                return;
+            }
+
+            // ダミーの内訳データ
+            const l_r_total = filteredData.reduce((sum, s) => sum + s.skills.l + s.skills.r, 0);
+            const s_w_total = filteredData.reduce((sum, s) => sum + s.skills.s + s.skills.w, 0);
+            const phrase_total = filteredData.reduce((sum, s) => sum + s.phrase, 0);
+
+            const total = l_r_total + s_w_total + phrase_total;
+
+            // ゼロ除算を回避
+            const data = (total === 0) ? [0, 0, 0] : [
+                (l_r_total / total) * 100,
+                (s_w_total / total) * 100,
+                (phrase_total / total) * 100
+            ];
+
+            const ctx = document.getElementById('breakdown-chart').getContext('2d');
+            if (charts.breakdown) charts.breakdown.destroy();
+            charts.breakdown = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ストーリー (聞く・読む)', 'バトル (話す・書く)', '単語・フレーズ・AI英会話'],
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            SKILL_COLORS.listening,
+                            SKILL_COLORS.speaking,
+                            SKILL_COLORS.phrase
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. トップ1クラスグリッド
+        function renderTop1Grid(data) {
+            const grid = document.getElementById('top-class-grid');
+            if (!grid) return;
+            grid.innerHTML = ''; // クリア
+
+            const metrics = [
+                { key: 'listening', name: '聞く (単語)', color: SKILL_COLORS.listening, unit: '単語', dataKey: 'skills.l' },
+                { key: 'speaking', name: '話す (単語)', color: SKILL_COLORS.speaking, unit: '単語', dataKey: 'skills.s' },
+                { key: 'reading', name: '読む (単語)', color: SKILL_COLORS.reading, unit: '単語', dataKey: 'skills.r' },
+                { key: 'writing', name: '書く (単語)', color: SKILL_COLORS.writing, unit: '単語', dataKey: 'skills.w' },
+                { key: 'phrase', name: 'フレーズ', color: SKILL_COLORS.phrase, unit: 'フレーズ', dataKey: 'phrase' },
+                { key: 'ai_time', name: 'AI会話時間', color: SKILL_COLORS.ai_time, unit: '分', dataKey: 'ai_time' },
+            ];
+
+            const classes = [...new Set(data.map(s => s.classId))];
+
+            metrics.forEach(metric => {
+                if (!data || data.length === 0 || classes.length === 0) return; // データがなければ何もしない
+
+                const classAvgs = classes.map(classId => {
+                    const classData = data.filter(s => s.classId === classId);
+                    const avg = getSkillAverage(classData, metric.dataKey);
+                    return { classId, avg };
+                }).sort((a, b) => b.avg - a.avg);
+
+                const top1 = classAvgs[0];
+                if (!top1) return; // クラスデータなし
+
+                const card = document.createElement('div');
+                card.className = 'top-class-card bg-white p-4 rounded-lg border border-slate-200';
+                card.style.borderColor = metric.color;
+                card.dataset.classId = top1.classId; // クリック遷移用のデータ
+
+                card.innerHTML = `
+                    <div class="text-sm font-semibold" style="color: ${metric.color};">${metric.name} No.1</div>
+                    <div class="mt-2">
+                        <div class="text-2xl font-bold text-slate-800">${top1.classId.replace('-', '年')}組</div>
+                        <div class="text-sm text-slate-500">平均 ${top1.avg.toFixed(0)} ${metric.unit}</div>
+                    </div>
+                    <div class="text-xs text-blue-600 font-semibold mt-2">
+                        クリックして詳細分析 &rarr;
+                    </div>
+                `;
+                // クリックイベント
+                card.addEventListener('click', () => {
+                    document.getElementById('class-filter').value = top1.classId;
+                    showView('class');
+                });
+                grid.appendChild(card);
+            });
+        }
+
+        // --- クラス詳細ビュー ---
+
+        // 5. 4技能バランス (棒グラフ)
+        function createSkillBarChart(selectedClass) {
+            const grade = selectedClass.split('-')[0] + '年生';
+
+            const classData = allStudentData.filter(s => s.classId === selectedClass);
+            const gradeData = allStudentData.filter(s => s.grade === grade);
+
+            const skills = ['l', 's', 'r', 'w'];
+            const labels = ['聞く', '話す', '読む', '書く'];
+
+            const classAvgs = skills.map(skill => getSkillAverage(classData, `skills.${skill}`));
+            const gradeAvgs = skills.map(skill => getSkillAverage(gradeData, `skills.${skill}`));
+
+            const ctx = document.getElementById('skill-bar-chart').getContext('2d');
+            if (charts.skillBar) charts.skillBar.destroy();
+            charts.skillBar = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: `クラス平均 (${selectedClass.replace('-', '年')}組)`,
+                            data: classAvgs,
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        },
+                        {
+                            label: `学年平均 (${grade})`,
+                            data: gradeAvgs,
+                            backgroundColor: 'rgba(209, 213, 219, 0.7)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // 6. 時系列推移 (ダミー)
+        function createTimeSeriesChart() {
+            const ctx = document.getElementById('time-series-chart').getContext('2d');
+            if (charts.timeSeries) charts.timeSeries.destroy();
+            charts.timeSeries = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['6月', '7月', '8月', '9月'],
+                    datasets: [
+                        { label: '聞く', data: [50, 60, 80, 100], borderColor: SKILL_COLORS.listening, fill: false, tension: 0.1 },
+                        { label: '話す', data: [40, 50, 65, 90], borderColor: SKILL_COLORS.speaking, fill: false, tension: 0.1 },
+                        { label: '読む', data: [45, 55, 70, 95], borderColor: SKILL_COLORS.reading, fill: false, tension: 0.1 },
+                        { label: '書く', data: [30, 40, 50, 70], borderColor: SKILL_COLORS.writing, fill: false, tension: 0.1 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        // 7. 生徒リスト
+        function renderStudentList(selectedClass, sortKey, sortOrder) {
+            const listBody = document.getElementById('student-list');
+            if (!listBody) return;
+
+            const classStudents = allStudentData
+                .filter(s => s.classId === selectedClass)
+                .map(s => ({
+                    ...s,
+                    diff_x: s.x - s.prev_x,
+                    diff_y: s.y - s.prev_y
+                }));
+
+            // ソート
+            classStudents.sort((a, b) => {
+                let valA = a[sortKey];
+                let valB = b[sortKey];
+                if (sortKey === 'name') {
+                    return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                }
+                return sortOrder === 'asc' ? valA - valB : valB - valA;
+            });
+
+            listBody.innerHTML = ''; // クリア
+
+            // ヘッダーのソート表示を更新
+            document.querySelectorAll('.student-list-header th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sort === sortKey) {
+                    th.classList.add(sortOrder === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            // 行を生成
+            classStudents.forEach(student => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50';
+                row.dataset.studentId = student.id; // 生徒IDをセット
+
+                // 先月比 (時間)
+                const diffX = student.diff_x;
+                const diffXIcon = diffX >= 0 ? `<span class="text-green-600">↗</span>` : `<span class="text-red-600">↘</span>`;
+                const diffXColor = diffX >= 0 ? 'text-green-600' : 'text-red-600';
+
+                // 先月比 (単語)
+                const diffY = student.diff_y;
+                const diffYIcon = diffY >= 0 ? `<span class="text-green-600">↗</span>` : `<span class="text-red-600">↘</span>`;
+                const diffYColor = diffY >= 0 ? 'text-green-600' : 'text-red-600';
+
+                row.innerHTML = `
+                    <td class="p-3 font-medium text-slate-900">${student.name}</td>
+                    <td class="p-3">
+                        <div class="font-medium">${student.x.toFixed(1)}h</div>
+                        <div class="w-full bg-slate-200 rounded-full h-1.5 mt-1">
+                            <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${Math.min(100, (student.x / 30) * 100)}%"></div>
+                        </div>
+                    </td>
+                    <td class="p-3 ${diffXColor} font-medium">
+                        ${diffXIcon} ${diffX >= 0 ? '+' : ''}${diffX.toFixed(1)}h
+                    </td>
+                    <td class="p-3">
+                        <div class="font-medium">${student.y.toFixed(0)}語</div>
+                        <div class="w-full bg-slate-200 rounded-full h-1.5 mt-1">
+                            <div class="bg-green-600 h-1.5 rounded-full" style="width: ${Math.min(100, (student.y / 600) * 100)}%"></div>
+                        </div>
+                    </td>
+                    <td class="p-3 ${diffYColor} font-medium">
+                        ${diffYIcon} ${diffY >= 0 ? '+' : ''}${diffY.toFixed(0)}語
+                    </td>
+                `;
+
+                // 行クリックで生徒詳細ビューへ (ロジック修正)
+                row.addEventListener('click', () => {
+                    const student = allStudentData.find(s => s.id === row.dataset.studentId);
+                    if (!student) return;
+
+                    // 1. Set class filter
+                    document.getElementById('student-view-class-filter').value = student.classId;
+                    // 2. Populate student filter
+                    populateStudentFilter(student.classId);
+                    // 3. Set student filter
+                    document.getElementById('student-view-student-filter').value = student.id;
+
+                    // 4. Switch view
+                    showView('student');
+                });
+
+                listBody.appendChild(row);
+            });
+        }
+
+        // --- 生徒詳細ビュー ---
+
+        // 8. 生徒詳細 6技能レーダー
+        function createStudentRadarChart(student, classData) {
+            const labels = ['聞く(単語)', '話す(単語)', '読む(単語)', '書く(単語)', 'フレーズ', 'AI会話(分)'];
+            const keys = ['skills.l', 'skills.s', 'skills.r', 'skills.w', 'phrase', 'ai_time'];
+
+            // 最大値の計算（クラス平均と個人の最大値）
+            const maxValues = keys.map(key => {
+                const classAvg = getSkillAverage(classData, key);
+                const studentVal = key.includes('.') ? (student.skills[key.split('.')[1]] || 0) : (student[key] || 0);
+                return Math.max(classAvg, studentVal);
+            });
+            // グラフの見た目のために、最大値に少しマージンを持たせる
+            const suggestedMax = Math.max(...maxValues) * 1.2;
+
+            const studentValues = keys.map(key => key.includes('.') ? (student.skills[key.split('.')[1]] || 0) : (student[key] || 0));
+            const classAvgValues = keys.map(key => getSkillAverage(classData, key));
+
+            const ctx = document.getElementById('student-radar-chart').getContext('2d');
+            if (charts.studentRadar) charts.studentRadar.destroy();
+            charts.studentRadar = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '本人',
+                            data: studentValues,
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(59, 130, 246, 1)'
+                        },
+                        {
+                            label: 'クラス平均',
+                            data: classAvgValues,
+                            backgroundColor: 'rgba(107, 114, 128, 0.2)',
+                            borderColor: 'rgba(107, 114, 128, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(107, 114, 128, 1)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            suggestedMax: suggestedMax > 0 ? suggestedMax : 10 // 0除算を避ける
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // 9. 生徒詳細 クラス内ポジション (散布図)
+        function createStudentScatterChart(student, classData) {
+            const ctx = document.getElementById('student-scatter-chart').getContext('2d');
+
+            const classPoints = classData.map(s => ({
+                x: s.x,
+                y: s.y,
+                label: s.name
+            }));
+
+            const studentPoint = {
+                x: student.x,
+                y: student.y,
+                label: student.name
+            };
+
+            if (charts.studentScatter) charts.studentScatter.destroy();
+            charts.studentScatter = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'クラスメイト',
+                            data: classPoints.filter(s => s.label !== student.name), // 本人を除く
+                            backgroundColor: 'rgba(107, 114, 128, 0.5)',
+                            pointRadius: 6,
+                        },
+                        {
+                            label: '本人',
+                            data: [studentPoint],
+                            backgroundColor: 'rgba(59, 130, 246, 0.9)',
+                            pointRadius: 10, // 本人を目立たせる
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: '今月の学習時間 (h)' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: '今月の習得単語数 (語)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    return `${context.raw.label}: (${context.raw.x}h, ${context.raw.y}語)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 10. 生徒詳細 学習内訳 (ドーナツ)
+        function createStudentBreakdownChart(student) {
+             const filteredData = [student]; // この生徒一人のデータ
+
+             const l_r_total = filteredData.reduce((sum, s) => sum + s.skills.l + s.skills.r, 0);
+             const s_w_total = filteredData.reduce((sum, s) => sum + s.skills.s + s.skills.w, 0);
+             const phrase_total = filteredData.reduce((sum, s) => sum + s.phrase, 0);
+
+             const total = l_r_total + s_w_total + phrase_total;
+
+             const data = (total === 0) ? [0, 0, 0] : [
+                 (l_r_total / total) * 100,
+                 (s_w_total / total) * 100,
+                 (phrase_total / total) * 100
+             ];
+
+             const ctx = document.getElementById('student-breakdown-chart').getContext('2d');
+             if (charts.studentBreakdown) charts.studentBreakdown.destroy();
+             charts.studentBreakdown = new Chart(ctx, {
+                 type: 'doughnut',
+                 data: {
+                     labels: ['ストーリー (聞く・読む)', 'バトル (話す・書く)', '単語・フレーズ・AI英会話'],
+                     datasets: [{
+                         data: data,
+                         backgroundColor: [
+                             SKILL_COLORS.listening,
+                             SKILL_COLORS.speaking,
+                             SKILL_COLORS.phrase
+                         ],
+                         borderColor: '#ffffff',
+                         borderWidth: 2
+                     }]
+                 },
+                 options: {
+                     responsive: true,
+                     plugins: {
+                         legend: { position: 'bottom' },
+                         tooltip: {
+                             callbacks: {
+                                 label: function(context) {
+                                     return `${context.label}: ${context.raw.toFixed(1)}%`;
+                                 }
+                             }
+                         }
+                     }
+                 }
+             });
+        }
+
+        // 11. 生徒詳細ビューの「描画」ロジック (改名)
+        function renderStudentViewContent(student) {
+            if (!student) {
+                 document.getElementById('student-summary-content').style.display = 'none';
+                 currentStudentId = null;
+                 return;
+            }
+
+            document.getElementById('student-summary-content').style.display = 'block';
+            currentStudentId = student.id;
+
+            // 2. サマリー情報の設定
+            document.getElementById('student-name-header').textContent = student.name;
+
+            // KPI
+            document.getElementById('student-kpi-time').textContent = `${student.x.toFixed(1)}h`;
+            document.getElementById('student-kpi-words').textContent = `${student.y.toFixed(0)}語`;
+
+            // KPI 先月比 (時間)
+            const diffX = student.x - student.prev_x;
+            const diffXEl = document.getElementById('student-kpi-time-diff');
+            diffXEl.textContent = `(${diffX >= 0 ? '↗ +' : '↘ '}${diffX.toFixed(1)}h)`;
+            diffXEl.className = `text-lg font-medium ml-2 ${diffX >= 0 ? 'text-green-600' : 'text-red-600'}`;
+
+            // KPI 先月比 (単語)
+            const diffY = student.y - student.prev_y;
+            const diffYEl = document.getElementById('student-kpi-words-diff');
+            diffYEl.textContent = `(${diffY >= 0 ? '↗ +' : '↘ '}${diffY.toFixed(0)}語)`;
+            diffYEl.className = `text-lg font-medium ml-2 ${diffY >= 0 ? 'text-green-600' : 'text-red-600'}`;
+
+            // 3. グラフ描画
+            const classData = allStudentData.filter(s => s.classId === student.classId);
+            createStudentRadarChart(student, classData);
+            createStudentScatterChart(student, classData);
+            createStudentBreakdownChart(student);
+
+            // 4. メモタブを「入力」にリセット
+            switchMemoTab('student', 'input');
+        }
+
+        // --- ビューの更新・切り替え ---
+
+        // 学校全体ビューを更新
+        function updateSchoolView() {
+            const selectedGrade = document.getElementById('grade-filter').value;
+            const filteredData = (selectedGrade === 'all')
+                ? allStudentData
+                : allStudentData.filter(s => s.grade === selectedGrade);
+
+            // KPIカード
+            const avgTime = getAverage(filteredData, 'x');
+            const avgSpeaking = getAverage(filteredData, 'ai_time');
+            document.getElementById('kpi-time').textContent = `${avgTime.toFixed(1)}h`;
+            document.getElementById('kpi-speaking').textContent = `${avgSpeaking.toFixed(0)} 分`;
+
+            // グラフ
+            createKpiWordsChart(filteredData);
+            createComparisonBarChart(filteredData);
+            createBreakdownChart(filteredData);
+            renderTop1Grid(filteredData);
+        }
+
+        // クラス詳細ビューを更新
+        function updateClassView() {
+            const selectedClass = document.getElementById('class-filter').value;
+
+            createSkillBarChart(selectedClass);
+            createTimeSeriesChart(); // これは現在ダミー
+            renderStudentList(selectedClass, 'x', 'desc'); // デフォルトは学習時間で降順
+
+            // 生徒詳細のクラスフィルタも同期
+            document.getElementById('student-view-class-filter').value = selectedClass;
+            populateStudentFilter(selectedClass);
+
+            // メモタブを「入力」にリセット
+            switchMemoTab('class', 'input');
+        }
+
+        // 生徒詳細ビューの生徒フィルタを更新
+        function populateStudentFilter(selectedClass) {
+            const studentFilter = document.getElementById('student-view-student-filter');
+            studentFilter.innerHTML = '<option value="">生徒を選択...</option>'; // 初期化
+
+            allStudentData
+                .filter(s => s.classId === selectedClass)
+                .forEach(s => {
+                    const option = document.createElement('option');
+                    option.value = s.id;
+                    option.textContent = s.name;
+                    studentFilter.appendChild(option);
+                });
+        }
+
+        // 生徒詳細ビューのメインコンテンツを更新 (ロジック修正)
+        function updateStudentView() {
+            const selectedStudentId = document.getElementById('student-view-student-filter').value;
+            if (selectedStudentId) {
+                const student = allStudentData.find(s => s.id === selectedStudentId);
+                renderStudentViewContent(student); // 描画関数を呼ぶ
+            } else {
+                renderStudentViewContent(null); // 生徒未選択なら非表示
+            }
+        }
+
+        // タブ切り替え (ロジック修正)
+        function showView(viewName) {
+            document.getElementById('school-view').style.display = (viewName === 'school') ? 'block' : 'none';
+            document.getElementById('class-view').style.display = (viewName === 'class') ? 'block' : 'none';
+            document.getElementById('student-view').style.display = (viewName === 'student') ? 'block' : 'none';
+
+            document.getElementById('school-tab').classList.toggle('active', viewName === 'school');
+            document.getElementById('class-tab').classList.toggle('active', viewName === 'class');
+            document.getElementById('student-tab').classList.toggle('active', viewName === 'student');
+
+            // ビュー表示時にデータを更新
+            if (viewName === 'school') {
+                updateSchoolView();
+            } else if (viewName === 'class') {
+                updateClassView();
+            } else if (viewName === 'student') {
+                // (★修正箇所)
+                const studentClassFilter = document.getElementById('student-view-class-filter');
+                const studentFilter = document.getElementById('student-view-student-filter');
+
+                let selectedClass = studentClassFilter.value;
+
+                // クラスが未選択の場合（例：初回読み込み時）、クラス詳細タブの値をデフォルトにする
+                if (!selectedClass) {
+                     selectedClass = document.getElementById('class-filter').value;
+                     studentClassFilter.value = selectedClass;
+                }
+
+                // 生徒フィルタの中身が空の場合（例：クラスが今設定された）、中身を埋める
+                if (studentFilter.options.length <= 1) { // 1 = "生徒を選択..."
+                    populateStudentFilter(selectedClass);
+                }
+
+                // 生徒が選択されていない場合、リストの最初の生徒を自動で選択する
+                if (!studentFilter.value && studentFilter.options.length > 1) {
+                    studentFilter.value = studentFilter.options[1].value; // 最初の生徒を選択
+                }
+
+                updateStudentView(); // フィルタに基づいて表示を更新
+            }
+        }
+
+        // メモの擬似タブ切り替え
+        function switchMemoTab(view, tabName) { // view = 'class' or 'student'
+            const inputArea = document.getElementById(`${view}-memo-input-area`);
+            const historyArea = document.getElementById(`${view}-memo-history-area`);
+            const inputTab = document.getElementById(`${view}-memo-tab-input`);
+            const historyTab = document.getElementById(`${view}-memo-tab-history`);
+
+            if (tabName === 'input') {
+                inputArea.style.display = 'block';
+                historyArea.style.display = 'none';
+                inputTab.classList.add('active');
+                historyTab.classList.remove('active');
+            } else {
+                inputArea.style.display = 'none';
+                historyArea.style.display = 'block';
+                inputTab.classList.remove('active');
+                historyTab.classList.add('active');
+            }
+        }
+
+        // --- イベントリスナー ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // フィルタの初期化
+            const classFilter = document.getElementById('student-view-class-filter');
+            allClassData.forEach(c => {
+                 const option = document.createElement('option');
+                 option.value = c.id;
+                 option.textContent = c.name;
+                 classFilter.appendChild(option);
+            });
+            // ★修正：初期読み込み時に生徒フィルタも（最初のクラスを元に）埋めておく
+            if (allClassData.length > 0) {
+                populateStudentFilter(allClassData[0].id);
+            }
+
+            // 初期表示
+            showView('school');
+
+            // タブのクリック
+            document.getElementById('school-tab').addEventListener('click', () => showView('school'));
+            document.getElementById('class-tab').addEventListener('click', () => showView('class'));
+            document.getElementById('student-tab').addEventListener('click', () => showView('student'));
+
+            // 学校全体・クラス詳細 フィルタの変更
+            document.getElementById('grade-filter').addEventListener('change', updateSchoolView);
+            document.getElementById('class-filter').addEventListener('change', updateClassView);
+
+            // 生徒詳細 フィルタの変更
+            document.getElementById('student-view-class-filter').addEventListener('change', (e) => {
+                populateStudentFilter(e.target.value);
+                updateStudentView(); // クラス変更時は生徒未選択状態に戻す
+            });
+            document.getElementById('student-view-student-filter').addEventListener('change', updateStudentView);
+
+            // 生徒リストのソート
+            document.querySelectorAll('.student-list-header th').forEach(th => {
+                th.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const sortKey = th.dataset.sort;
+                    if (!sortKey) return;
+                    const currentOrder = th.classList.contains('sort-desc') ? 'desc' : 'asc';
+                    const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+                    const selectedClass = document.getElementById('class-filter').value;
+                    renderStudentList(selectedClass, sortKey, newOrder);
+                });
+            });
+
+            // メモタブのクリックイベント
+            document.getElementById('class-memo-tab-input').addEventListener('click', () => switchMemoTab('class', 'input'));
+            document.getElementById('class-memo-tab-history').addEventListener('click', () => switchMemoTab('class', 'history'));
+            document.getElementById('student-memo-tab-input').addEventListener('click', () => switchMemoTab('student', 'input'));
+            document.getElementById('student-memo-tab-history').addEventListener('click', () => switchMemoTab('student', 'history'));
+        });
+
+    </script>
+</body>
+</html>
