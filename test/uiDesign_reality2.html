@@ -76,18 +76,17 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- 習得単語数 -->
             <div class="bg-white p-6 rounded-lg shadow-sm relative">
-              <div class="text-sm font-medium text-slate-500">習得単語数</div>
-              <div class="chart-container" style="height: 150px; width: 150px; margin: 10px auto 0;">
+              <div class="text-sm font-medium text-slate-500 text-center">習得単語数</div>
+              <div class="chart-container relative flex items-center justify-center" style="height: 150px; width: 150px; margin: 10px auto 0;">
                 <canvas id="kpi-words-chart" style="max-height: 150px;"></canvas>
-              </div>
-              <div
-                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-4 flex flex-col items-center justify-center">
-                <div id="kpi-words-percent" class="text-4xl font-bold text-green-600">19%</div>
-                <div class="text-sm text-slate-500">達成</div>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <div id="kpi-words-percent" class="text-4xl font-bold text-green-600">19%</div>
+                  <div class="text-sm text-slate-500">達成</div>
+                </div>
               </div>
             </div>
             <!-- AI英会話プレー時間 -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center justify-center text-center">
               <div class="text-sm font-medium text-slate-500">AI英会話 プレー時間（分）</div>
               <div id="kpi-ai-time" class="text-5xl font-bold text-red-600 my-2">88 分</div>
             </div>
@@ -179,7 +178,7 @@
                   data-sort="x">今月の学習時間</th>
                 <th
                   class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable"
-                  data-sort="y">今月の習得語彙数</th>
+                  data-sort="y">今月の習得単語数</th>
                 <!-- 「先月比」の列を削除 -->
               </tr>
               <!-- ▲▲▲ ここまでUI変更 ▲▲▲ -->
@@ -188,43 +187,6 @@
               <!-- JSによって生徒が挿入されます -->
             </tbody>
           </table>
-        </div>
-
-        <!-- クラス指導メモ (擬似タブ廃止) -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <h3 class="text-lg font-semibold text-slate-700 mb-4">クラス指導メモ</h3>
-
-          <!-- 入力欄 (常時表示) -->
-          <div>
-            <h4 class="text-sm font-semibold text-slate-600 mb-2">📝 メモを入力</h4>
-            <textarea class="w-full h-24 border rounded p-2 text-sm"></textarea>
-            <button class="mt-2 bg-blue-500 text-white px-4 py-1 rounded text-sm">メモを保存 (ダミー)</button>
-          </div>
-
-          <!-- 履歴 (常時表示) -->
-          <div class="mt-6">
-            <h4 class="text-sm font-semibold text-slate-600 mb-2">📖 メモ履歴</h4>
-            <div class="border rounded-lg overflow-hidden">
-              <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
-                  <tr>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase w-32">日付</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">メモ内容</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200 text-sm">
-                  <tr>
-                    <td class="px-4 py-2 align-top">2025/10/01</td>
-                    <td class="px-4 py-2">学習時間が全体的に低下傾向。夏休みの反動か。声かけを強化する。</td>
-                  </tr>
-                  <tr>
-                    <td class="px-4 py-2 align-top">2025/09/01</td>
-                    <td class="px-4 py-2">新学期スタート。特にA3, C1のスタートダッシュが良い。</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
 
       </div>
@@ -253,33 +215,17 @@
         <!-- 生徒サマリー -->
         <div class="mb-4">
           <h2 id="student-name-header" class="text-2xl font-bold text-slate-800 mb-3">生徒 A1</h2>
-
-          <!-- クラス内順位 (新規追加) -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
-              <div class="text-sm font-medium text-slate-500">今月の学習時間 (クラス内順位)</div>
-              <div id="student-rank-time" class="text-3xl font-bold text-slate-700 my-2">--</div>
-            </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 覚えた単語数 (クラス内順位) -->
             <div class="bg-white p-4 rounded-lg shadow-sm text-center">
               <div class="text-sm font-medium text-slate-500">おぼえた単語数 (クラス内順位)</div>
               <div id="student-rank-words" class="text-3xl font-bold text-slate-700 my-2">--</div>
             </div>
-          </div>
-
-          <!-- KPIカード (既存) -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 今月の学習時間 -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-              <div class="text-sm font-medium text-slate-500">今月の学習時間</div>
-              <div id="student-summary-time" class="text-4xl font-bold text-blue-600 my-2">
-                <!-- JSで "25.5h" のように挿入 (先月比を削除) -->
-              </div>
-            </div>
             <!-- 今月の習得単語数 -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="bg-white p-6 rounded-lg shadow-sm text-center">
               <div class="text-sm font-medium text-slate-500">今月の習得単語数</div>
               <div id="student-summary-words" class="text-4xl font-bold text-green-600 my-2">
-                 <!-- JSで "510語" のように挿入 (先月比を削除) -->
+                <!-- JSで "510語" のように挿入 -->
               </div>
             </div>
           </div>
@@ -288,56 +234,25 @@
 
         <!-- グラフエリア (2カラム固定) -->
         <div class="grid grid-cols-2 gap-4 mb-4">
-          <!-- 6技能バランス (棒グラフに変更) -->
-          <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
-            <h3 class="text-lg font-semibold text-slate-700 mb-2">6技能バランス (個人 vs クラス平均)</h3>
-            <canvas id="student-skill-bar-chart"></canvas>
-            <!-- ▼▼▼ ここからUI変更 ▼▼▼ -->
-            <p class="chart-conclusion text-center text-sm text-slate-600 font-medium mt-2">青色（本人）グレー（クラス平均）を比べ、得意・不得意なスキルを把握できます。</p>
-            <!-- ▲▲▲ ここまでUI変更 ▲▲▲ -->
+          <!-- 6技能バランス (棒グラフ) -->
+          <div class="flex flex-col space-y-3">
+            <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">6技能バランス (個人 vs クラス平均)</h3>
+              <canvas id="student-skill-bar-chart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center text-sm text-slate-600 font-medium">
+              青色（本人）とグレー（クラス平均）を比べ、得意・不得意なスキルを把握できます。
+            </div>
           </div>
-
-          <!-- クラス内ポジション (グラフを削除) -->
 
           <!-- 学習時間の内訳 -->
-          <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
-            <h3 class="text-lg font-semibold text-slate-700 mb-2">学習時間の内訳 (ゲームプレイ = 学習活動)</h3>
-            <canvas id="student-breakdown-chart"></canvas>
-            <!-- ▼▼▼ ここからUI変更 ▼▼▼ -->
-            <p class="chart-conclusion text-center text-sm text-slate-600 font-medium mt-2">ストーリー（聞く）中心か、バトル（話す）中心か、学習の「偏り」＝「好み」が分かります。</p>
-            <!-- ▲▲▲ ここまでUI変更 ▲▲▲ -->
-          </div>
-        </div>
-
-        <!-- 個別フォローアップ・プラン (擬似タブ廃止 & ページ下部に移動) -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <h3 class="text-lg font-semibold text-slate-700 mb-4">個別フォローアップ・プラン</h3>
-
-          <!-- 入力欄 (常時表示) -->
-          <div>
-            <h4 class="text-sm font-semibold text-slate-600 mb-2">📝 メモを入力</h4>
-            <textarea class="w-full h-24 border rounded p-2 text-sm"></textarea>
-            <button class="mt-2 bg-blue-500 text-white px-4 py-1 rounded text-sm">メモを保存 (ダミー)</button>
-          </div>
-
-          <!-- 履歴 (常時表示) -->
-          <div class="mt-6">
-            <h4 class="text-sm font-semibold text-slate-600 mb-2">📖 メモ履歴</h4>
-            <div class="border rounded-lg overflow-hidden">
-              <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
-                  <tr>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase w-32">日付</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">メモ内容</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200 text-sm">
-                  <tr>
-                    <td class="px-4 py-2 align-top">2025/10/01</td>
-                    <td class="px-4 py-2">先月比で語彙数が大幅減。学習スタイルを確認する。</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="flex flex-col space-y-3">
+            <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">学習時間の内訳 (ゲームプレイ = 学習活動)</h3>
+              <canvas id="student-breakdown-chart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center text-sm text-slate-600 font-medium">
+              ストーリー（聞く）中心か、バトル（話す）中心か、学習の「偏り」＝「好み」が分かります。
             </div>
           </div>
         </div>
@@ -548,7 +463,7 @@
       charts['breakdown-chart'] = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: [`ストーリー (聞く・読む)`, `バトル (話す・書く)`, `単語学習 (ミニゲーム)`],
+          labels: [`ストーリー (聞く・読む)`, `バトル (話す・書く)`, `単語学習 (4技能)`],
           datasets: [{
             data: [avgBreakdown.story, avgBreakdown.battle, avgBreakdown.mini],
             backgroundColor: ['#60a5fa', '#f87171', '#facc15'], // blue-400, red-400, yellow-400
@@ -871,7 +786,7 @@
       charts['student-breakdown-chart'] = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: [`ストーリー (聞く・読む)`, `バトル (話す・書く)`, `単語学習 (ミニゲーム)`],
+          labels: [`ストーリー (聞く・読む)`, `バトル (話す・書く)`, `単語学習 (4技能)`],
           datasets: [{
             data: [breakdown.story, breakdown.battle, breakdown.mini],
             backgroundColor: ['#60a5fa', '#f87171', '#facc15'], // blue-400, red-400, yellow-400
@@ -930,14 +845,8 @@
       const classAvg = getAverageSkills(classData);
 
       if (!student) {
-        // 生徒が選択されていない場合のUI
         document.getElementById('student-name-header').innerText = "生徒を選択してください";
-        // カードのテキストをクリア
-        document.getElementById('student-summary-time').innerHTML = '--';
         document.getElementById('student-summary-words').innerHTML = '--';
-        // ▼▼▼ ここからUI変更 ▼▼▼
-        // 順位カードもクリア
-        document.getElementById('student-rank-time').innerHTML = '--';
         document.getElementById('student-rank-words').innerHTML = '--';
         // グラフをクリア
         destroyChart('student-skill-bar-chart');
@@ -951,19 +860,11 @@
       // ▼▼▼ ここからUI変更ロジック ▼▼▼
       document.getElementById('student-name-header').innerText = student.name;
 
-      // サマリーカード (先月比を削除)
-      document.getElementById('student-summary-time').innerHTML = `${student.x.toFixed(1)}h`;
+      // サマリーカード
       document.getElementById('student-summary-words').innerHTML = `${student.y.toFixed(0)}語`;
 
-      // 順位カード (新規追加)
+      // 順位カード
       const classSize = classData.length;
-      // 学習時間の順位
-      const sortedByTime = [...classData].sort((a, b) => b.x - a.x);
-      const timeRank = sortedByTime.findIndex(s => s.id === student.id) + 1;
-      document.getElementById('student-rank-time').innerHTML =
-        `<span class="text-blue-600">${timeRank}</span><span class="text-lg">位</span> / ${classSize}人中`;
-
-      // 習得単語数の順位
       const sortedByWords = [...classData].sort((a, b) => b.y - a.y);
       const wordsRank = sortedByWords.findIndex(s => s.id === student.id) + 1;
       document.getElementById('student-rank-words').innerHTML =
