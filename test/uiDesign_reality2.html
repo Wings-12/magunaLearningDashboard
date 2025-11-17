@@ -8,6 +8,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
   <style>
+    body {
+      min-width: 900px;
+    }
+    .grid-fixed-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
     /* Chart.jsのツールチップがTailwind CSSより前面に出るように調整 */
     canvas {
       /* グラフがコンテナの高さを超えないように */
@@ -73,7 +80,7 @@
         <!-- KPIカード -->
         <div class="mb-4">
           <h2 class="text-xl font-bold text-slate-700 mb-3">生徒1人あたり 月間平均サマリー</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid-fixed-2 gap-4">
             <!-- 習得単語数 -->
             <div class="bg-white p-6 rounded-lg shadow-sm relative">
               <div class="text-sm font-medium text-slate-500 text-center">習得単語数</div>
@@ -93,7 +100,7 @@
           </div>
         </div>
         <!-- KPI補足テキスト -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="grid-fixed-2 gap-4 mb-6">
           <div class="space-y-3">
             <div class="text-base font-semibold text-slate-700 p-3 bg-white rounded-lg shadow-sm">中学3年間目標: 1800語
               <br>
@@ -104,7 +111,7 @@
         </div>
 
         <!-- グラフエリア (2カラム固定) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="grid-fixed-2 gap-4 mb-6">
           <!-- 学習効果の証明 -->
           <div class="flex flex-col space-y-3">
             <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
@@ -130,7 +137,7 @@
         <!-- No.1クラス -->
         <div class="mb-4">
           <h2 class="text-xl font-bold text-slate-700 mb-3">指標別 No.1 クラス (活用事例の発見)</h2>
-          <div id="top-class-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div id="top-class-grid" class="grid-fixed-2 gap-4">
             <!-- JSによってカードが挿入されます -->
           </div>
         </div>
@@ -150,7 +157,7 @@
         </div>
 
         <!-- グラフエリア (2カラム固定) -->
-        <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="grid-fixed-2 gap-4 mb-4">
           <!-- 4技能バランス -->
           <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
             <h3 class="text-lg font-semibold text-slate-700 mb-2">4技能バランス (クラス平均 vs 学年平均)</h3>
@@ -215,7 +222,7 @@
         <!-- 生徒サマリー -->
         <div class="mb-4">
           <h2 id="student-name-header" class="text-2xl font-bold text-slate-800 mb-3">生徒 A1</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid-fixed-2 gap-4">
             <!-- 覚えた単語数 (クラス内順位) -->
             <div class="bg-white p-4 rounded-lg shadow-sm text-center">
               <div class="text-sm font-medium text-slate-500">おぼえた単語数 (クラス内順位)</div>
@@ -233,7 +240,7 @@
 
 
         <!-- グラフエリア (2カラム固定) -->
-        <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="grid-fixed-2 gap-4 mb-4">
           <!-- 6技能バランス (棒グラフ) -->
           <div class="flex flex-col space-y-3">
             <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
