@@ -151,8 +151,7 @@
         <div class="mb-4 bg-white p-4 rounded-lg shadow-sm flex items-center space-x-2">
           <label for="class-filter" class="text-sm font-semibold text-slate-600">クラス選択:</label>
           <select id="class-filter" class="border rounded px-3 py-1 text-sm">
-            <option value="1-1">1年1組</option>
-            <option value="1-2">1年2組</option>
+            <!-- JSでクラス一覧を挿入 -->
           </select>
         </div>
 
@@ -207,8 +206,7 @@
           <div class="flex items-center space-x-2">
             <label for="student-class-filter" class="text-sm font-semibold text-slate-600">クラス選択:</label>
             <select id="student-class-filter" class="border rounded px-3 py-1 text-sm">
-              <option value="1-1">1年1組</option>
-              <option value="1-2">1年2組</option>
+              <!-- JSでクラス一覧を挿入 -->
             </select>
           </div>
           <div class="flex items-center space-x-2">
@@ -275,18 +273,39 @@
     // ▼▼▼ ここからUI変更 ▼▼▼
     // prev_x, prev_y を削除
     const allStudentData = [
-      // 1-1組 (n=5)
-      { id: "A1", name: "生徒 A1", classId: "1-1", x: 19.9, y: 255, skills: { listen: 90, speak: 60, read: 70, write: 50, phrase: 40, ai: 80 }, breakdown: { story: 60, battle: 30, mini: 10 } },
-      { id: "A2", name: "生徒 A2", classId: "1-1", x: 15.2, y: 350, skills: { listen: 70, speak: 80, read: 80, write: 75, phrase: 70, ai: 90 }, breakdown: { story: 30, battle: 40, mini: 30 } },
-      { id: "A3", name: "生徒 A3", classId: "1-1", x: 8.1, y: 150, skills: { listen: 60, speak: 50, read: 60, write: 40, phrase: 30, ai: 50 }, breakdown: { story: 50, battle: 20, mini: 30 } },
-      { id: "A4", name: "生徒 A4", classId: "1-1", x: 25.0, y: 410, skills: { listen: 85, speak: 90, read: 80, write: 80, phrase: 80, ai: 100 }, breakdown: { story: 40, battle: 40, mini: 20 } },
-      { id: "A5", name: "生徒 A5", classId: "1-1", x: 3.5, y: 50, skills: { listen: 40, speak: 30, read: 40, write: 20, phrase: 10, ai: 10 }, breakdown: { story: 70, battle: 10, mini: 20 } },
-      // 1-2組 (n=5)
-      { id: "B1", name: "生徒 B1", classId: "1-2", x: 22.0, y: 380, skills: { listen: 80, speak: 85, read: 75, write: 70, phrase: 75, ai: 95 }, breakdown: { story: 40, battle: 40, mini: 20 } },
-      { id: "B2", name: "生徒 B2", classId: "1-2", x: 18.5, y: 310, skills: { listen: 75, speak: 70, read: 80, write: 65, phrase: 60, ai: 70 }, breakdown: { story: 50, battle: 30, mini: 20 } },
-      { id: "B3", name: "生徒 B3", classId: "1-2", x: 10.0, y: 180, skills: { listen: 65, speak: 60, read: 70, write: 55, phrase: 50, ai: 60 }, breakdown: { story: 60, battle: 20, mini: 20 } },
-      { id: "B4", name: "生徒 B4", classId: "1-2", x: 5.0, y: 80, skills: { listen: 50, speak: 40, read: 55, write: 30, phrase: 20, ai: 30 }, breakdown: { story: 70, battle: 20, mini: 10 } },
-      { id: "B5", name: "生徒 B5", classId: "1-2", x: 12.0, y: 220, skills: { listen: 70, speak: 65, read: 70, write: 60, phrase: 55, ai: 65 }, breakdown: { story: 55, battle: 25, mini: 25 } },
+      // 1年生
+      { id: "A1", name: "生徒 A1", grade: "1", classId: "1-1", x: 19.9, y: 255, skills: { listen: 90, speak: 60, read: 70, write: 50, phrase: 40, ai: 80 }, breakdown: { story: 60, battle: 30, mini: 10 } },
+      { id: "A2", name: "生徒 A2", grade: "1", classId: "1-1", x: 15.2, y: 350, skills: { listen: 70, speak: 80, read: 80, write: 75, phrase: 70, ai: 90 }, breakdown: { story: 30, battle: 40, mini: 30 } },
+      { id: "A3", name: "生徒 A3", grade: "1", classId: "1-1", x: 8.1, y: 150, skills: { listen: 60, speak: 50, read: 60, write: 40, phrase: 30, ai: 50 }, breakdown: { story: 50, battle: 20, mini: 30 } },
+      { id: "A4", name: "生徒 A4", grade: "1", classId: "1-1", x: 25.0, y: 410, skills: { listen: 85, speak: 90, read: 80, write: 80, phrase: 80, ai: 100 }, breakdown: { story: 40, battle: 40, mini: 20 } },
+      { id: "A5", name: "生徒 A5", grade: "1", classId: "1-1", x: 3.5, y: 50, skills: { listen: 40, speak: 30, read: 40, write: 20, phrase: 10, ai: 10 }, breakdown: { story: 70, battle: 10, mini: 20 } },
+      { id: "B1", name: "生徒 B1", grade: "1", classId: "1-2", x: 22.0, y: 380, skills: { listen: 80, speak: 85, read: 75, write: 70, phrase: 75, ai: 95 }, breakdown: { story: 40, battle: 40, mini: 20 } },
+      { id: "B2", name: "生徒 B2", grade: "1", classId: "1-2", x: 18.5, y: 310, skills: { listen: 75, speak: 70, read: 80, write: 65, phrase: 60, ai: 70 }, breakdown: { story: 50, battle: 30, mini: 20 } },
+      { id: "B3", name: "生徒 B3", grade: "1", classId: "1-2", x: 10.0, y: 180, skills: { listen: 65, speak: 60, read: 70, write: 55, phrase: 50, ai: 60 }, breakdown: { story: 60, battle: 20, mini: 20 } },
+      { id: "B4", name: "生徒 B4", grade: "1", classId: "1-2", x: 5.0, y: 80, skills: { listen: 50, speak: 40, read: 55, write: 30, phrase: 20, ai: 30 }, breakdown: { story: 70, battle: 20, mini: 10 } },
+      { id: "B5", name: "生徒 B5", grade: "1", classId: "1-2", x: 12.0, y: 220, skills: { listen: 70, speak: 65, read: 70, write: 60, phrase: 55, ai: 65 }, breakdown: { story: 55, battle: 25, mini: 20 } },
+      // 2年生
+      { id: "C1", name: "生徒 C1", grade: "2", classId: "2-1", x: 23.5, y: 480, skills: { listen: 88, speak: 85, read: 90, write: 82, phrase: 78, ai: 95 }, breakdown: { story: 35, battle: 45, mini: 20 } },
+      { id: "C2", name: "生徒 C2", grade: "2", classId: "2-1", x: 17.0, y: 320, skills: { listen: 72, speak: 68, read: 75, write: 70, phrase: 65, ai: 70 }, breakdown: { story: 45, battle: 30, mini: 25 } },
+      { id: "C3", name: "生徒 C3", grade: "2", classId: "2-1", x: 11.5, y: 210, skills: { listen: 68, speak: 62, read: 70, write: 60, phrase: 55, ai: 60 }, breakdown: { story: 55, battle: 25, mini: 20 } },
+      { id: "C4", name: "生徒 C4", grade: "2", classId: "2-1", x: 6.0, y: 120, skills: { listen: 55, speak: 48, read: 58, write: 45, phrase: 35, ai: 35 }, breakdown: { story: 65, battle: 20, mini: 15 } },
+      { id: "C5", name: "生徒 C5", grade: "2", classId: "2-1", x: 19.2, y: 360, skills: { listen: 80, speak: 82, read: 78, write: 76, phrase: 70, ai: 88 }, breakdown: { story: 40, battle: 35, mini: 25 } },
+      { id: "D1", name: "生徒 D1", grade: "2", classId: "2-2", x: 20.5, y: 390, skills: { listen: 82, speak: 78, read: 80, write: 74, phrase: 72, ai: 92 }, breakdown: { story: 38, battle: 37, mini: 25 } },
+      { id: "D2", name: "生徒 D2", grade: "2", classId: "2-2", x: 14.7, y: 260, skills: { listen: 70, speak: 65, read: 72, write: 66, phrase: 60, ai: 68 }, breakdown: { story: 48, battle: 32, mini: 20 } },
+      { id: "D3", name: "生徒 D3", grade: "2", classId: "2-2", x: 9.5, y: 180, skills: { listen: 62, speak: 58, read: 65, write: 55, phrase: 48, ai: 55 }, breakdown: { story: 58, battle: 22, mini: 20 } },
+      { id: "D4", name: "生徒 D4", grade: "2", classId: "2-2", x: 3.8, y: 70, skills: { listen: 45, speak: 38, read: 50, write: 35, phrase: 25, ai: 25 }, breakdown: { story: 70, battle: 15, mini: 15 } },
+      { id: "D5", name: "生徒 D5", grade: "2", classId: "2-2", x: 16.0, y: 300, skills: { listen: 75, speak: 72, read: 74, write: 68, phrase: 64, ai: 72 }, breakdown: { story: 50, battle: 28, mini: 22 } },
+      // 3年生
+      { id: "E1", name: "生徒 E1", grade: "3", classId: "3-1", x: 26.0, y: 520, skills: { listen: 92, speak: 90, read: 95, write: 88, phrase: 85, ai: 105 }, breakdown: { story: 33, battle: 47, mini: 20 } },
+      { id: "E2", name: "生徒 E2", grade: "3", classId: "3-1", x: 18.8, y: 370, skills: { listen: 82, speak: 76, read: 84, write: 79, phrase: 72, ai: 90 }, breakdown: { story: 42, battle: 38, mini: 20 } },
+      { id: "E3", name: "生徒 E3", grade: "3", classId: "3-1", x: 12.5, y: 240, skills: { listen: 70, speak: 68, read: 72, write: 65, phrase: 60, ai: 68 }, breakdown: { story: 52, battle: 30, mini: 18 } },
+      { id: "E4", name: "生徒 E4", grade: "3", classId: "3-1", x: 7.2, y: 150, skills: { listen: 58, speak: 52, read: 60, write: 50, phrase: 42, ai: 45 }, breakdown: { story: 62, battle: 23, mini: 15 } },
+      { id: "E5", name: "生徒 E5", grade: "3", classId: "3-1", x: 4.0, y: 90, skills: { listen: 48, speak: 40, read: 50, write: 38, phrase: 30, ai: 28 }, breakdown: { story: 70, battle: 20, mini: 10 } },
+      { id: "F1", name: "生徒 F1", grade: "3", classId: "3-2", x: 21.7, y: 430, skills: { listen: 85, speak: 82, read: 86, write: 80, phrase: 76, ai: 98 }, breakdown: { story: 36, battle: 44, mini: 20 } },
+      { id: "F2", name: "生徒 F2", grade: "3", classId: "3-2", x: 16.9, y: 310, skills: { listen: 74, speak: 70, read: 76, write: 70, phrase: 66, ai: 74 }, breakdown: { story: 46, battle: 34, mini: 20 } },
+      { id: "F3", name: "生徒 F3", grade: "3", classId: "3-2", x: 10.2, y: 190, skills: { listen: 64, speak: 60, read: 66, write: 57, phrase: 52, ai: 58 }, breakdown: { story: 56, battle: 24, mini: 20 } },
+      { id: "F4", name: "生徒 F4", grade: "3", classId: "3-2", x: 5.5, y: 120, skills: { listen: 52, speak: 46, read: 54, write: 44, phrase: 38, ai: 36 }, breakdown: { story: 66, battle: 21, mini: 13 } },
+      { id: "F5", name: "生徒 F5", grade: "3", classId: "3-2", x: 14.0, y: 260, skills: { listen: 70, speak: 68, read: 72, write: 64, phrase: 58, ai: 66 }, breakdown: { story: 48, battle: 32, mini: 20 } },
     ];
     // ▲▲▲ ここまでUI変更 ▲▲▲
 
@@ -306,6 +325,50 @@
     let currentSort = { column: 'x', order: 'desc' };
     let currentClassId = "1-1";
     let currentStudentId = "A1";
+
+    function formatClassLabel(classId) {
+      if (!classId) return '';
+      const parts = classId.split('-');
+      if (parts.length !== 2) return classId;
+      return `${parts[0]}年${parts[1]}組`;
+    }
+
+    function getSortedClassIds() {
+      return [...new Set(allStudentData.map(s => s.classId))]
+        .sort((a, b) => a.localeCompare(b, 'ja', { numeric: true }));
+    }
+
+    function initializeClassSelectors() {
+      const classIds = getSortedClassIds();
+      const classFilter = document.getElementById('class-filter');
+      const studentClassFilter = document.getElementById('student-class-filter');
+      [classFilter, studentClassFilter].forEach(select => {
+        if (!select) return;
+        select.innerHTML = '';
+        classIds.forEach(id => {
+          const option = document.createElement('option');
+          option.value = id;
+          option.text = formatClassLabel(id);
+          select.appendChild(option);
+        });
+      });
+      if (!classIds.includes(currentClassId)) {
+        currentClassId = classIds[0] || '';
+      }
+      if (!allStudentData.some(s => s.id === currentStudentId && s.classId === currentClassId)) {
+        const fallbackStudent = allStudentData.find(s => s.classId === currentClassId);
+        currentStudentId = fallbackStudent ? fallbackStudent.id : null;
+      }
+      if (classFilter) classFilter.value = currentClassId || '';
+      if (studentClassFilter) studentClassFilter.value = currentClassId || '';
+    }
+
+    function filterDataByGrade(gradeValue) {
+      if (!gradeValue || gradeValue === 'all') {
+        return allStudentData;
+      }
+      return allStudentData.filter(student => student.grade === gradeValue);
+    }
 
     // ####################
     // 汎用ヘルパー関数
@@ -538,7 +601,7 @@
         card.innerHTML = `
           <div class="text-sm font-semibold text-slate-700">${metric.name}</div>
           <div class="my-2">
-            <span class="text-2xl font-bold text-blue-600">${topClass.name}</span>
+            <span class="text-2xl font-bold text-blue-600">${formatClassLabel(topClass.name) || topClass.name}</span>
           </div>
           <div class="text-xs text-slate-500">平均 ${topClass.avg.toFixed(1)} ${metric.unit}</div>
         `;
@@ -550,8 +613,7 @@
     // 学校全体ビュー 更新
     function updateSchoolView() {
       const grade = document.getElementById('grade-filter').value;
-      // フィルタロジック (ダミー)
-      const filteredData = allStudentData;
+      const filteredData = filterDataByGrade(grade);
 
       // KPIカード
       const avgPlayTime = getAverage(filteredData, 'x');
@@ -583,9 +645,12 @@
       if (data.length === 0) return;
 
       const classAvg = getAverageSkills(data);
+      const classGrade = data[0]?.grade || null;
+      const gradePeerData = classGrade ? allStudentData.filter(s => s.grade === classGrade) : [];
+      const gradeAvg = gradePeerData.length > 0 ? getAverageSkills(gradePeerData) : gradeAvgSkills;
       const labels = ['聞く', '話す', '読む', '書く'];
       const classData = [classAvg.listen, classAvg.speak, classAvg.read, classAvg.write];
-      const gradeData = [gradeAvgSkills.listen, gradeAvgSkills.speak, gradeAvgSkills.read, gradeAvgSkills.write];
+      const gradeData = [gradeAvg.listen, gradeAvg.speak, gradeAvg.read, gradeAvg.write];
 
       const ctx = document.getElementById('skill-bar-chart').getContext('2d');
       charts['skill-bar-chart'] = new Chart(ctx, {
@@ -722,6 +787,10 @@
       createSkillBarChart(classData);
       createGrowthLineChart(classData);
       renderStudentList(classData, currentSort.column, currentSort.order);
+      const studentClassFilter = document.getElementById('student-class-filter');
+      if (studentClassFilter) {
+        studentClassFilter.value = currentClassId;
+      }
     }
 
 
@@ -822,26 +891,31 @@
     // 生徒詳細フィルタ populated
     function populateStudentFilter(classId) {
       const studentFilter = document.getElementById('student-filter');
+      if (!studentFilter) return;
       studentFilter.innerHTML = '';
-      allStudentData
+      if (!classId) {
+        currentStudentId = null;
+        return;
+      }
+
+      const students = allStudentData
         .filter(s => s.classId === classId)
-        .forEach(s => {
-          const option = document.createElement('option');
-          option.value = s.id;
-          option.text = s.name;
-          studentFilter.appendChild(option);
-        });
+        .sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+
+      students.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.id;
+        option.text = s.name;
+        studentFilter.appendChild(option);
+      });
       // フィルタの現在の値も更新
-      if (allStudentData.some(s => s.classId === classId && s.id === currentStudentId)) {
+      if (students.some(s => s.id === currentStudentId)) {
         studentFilter.value = currentStudentId;
+      } else if (studentFilter.options.length > 0) {
+        studentFilter.selectedIndex = 0;
+        currentStudentId = studentFilter.value;
       } else {
-        // クラスが変更され、現在の生徒がそのクラスにいない場合、最初の生徒を選択
-        if (studentFilter.options.length > 0) {
-            studentFilter.selectedIndex = 0;
-            currentStudentId = studentFilter.value;
-        } else {
-            currentStudentId = null; // 生徒がいない
-        }
+        currentStudentId = null; // 生徒がいない
       }
     }
 
@@ -887,9 +961,21 @@
 
     // 生徒詳細ビュー 更新
     function updateStudentView() {
-        currentClassId = document.getElementById('student-class-filter').value;
-        currentStudentId = document.getElementById('student-filter').value;
-        renderStudentViewContent();
+      const studentClassFilter = document.getElementById('student-class-filter');
+      const studentFilter = document.getElementById('student-filter');
+      if (studentClassFilter) {
+        currentClassId = studentClassFilter.value;
+      }
+      if (studentFilter && studentFilter.value) {
+        currentStudentId = studentFilter.value;
+      } else if (studentFilter && studentFilter.options.length === 0) {
+        currentStudentId = null;
+      }
+      const classFilter = document.getElementById('class-filter');
+      if (classFilter) {
+        classFilter.value = currentClassId;
+      }
+      renderStudentViewContent();
     }
 
 
@@ -919,6 +1005,10 @@
         updateClassView();
       } else if (view === 'student') {
         // 生徒詳細タブを開いた時、フィルタが初期化されるように
+        const studentClassSelect = document.getElementById('student-class-filter');
+        if (studentClassSelect) {
+          studentClassSelect.value = currentClassId;
+        }
         populateStudentFilter(currentClassId); // クラスフィルタの現在の値に基づいて生徒フィルタを更新
         updateStudentView(); // フィルタに基づいてコンテンツを描画
       }
@@ -926,6 +1016,9 @@
 
     // 初期化
     document.addEventListener('DOMContentLoaded', () => {
+      initializeClassSelectors();
+      populateStudentFilter(currentClassId);
+
       // 学校全体
       document.getElementById('grade-filter').addEventListener('change', updateSchoolView);
 
@@ -948,14 +1041,9 @@
       });
       document.getElementById('student-filter').addEventListener('change', (e) => {
         currentStudentId = e.target.value;
-        updateStudentView();a
+        updateStudentView();
       });
 
-      // 初期表示
-      // 生徒詳細タブのフィルタを初期化
-      populateStudentFilter(currentClassId);
-      document.getElementById('student-class-filter').value = currentClassId;
-      document.getElementById('student-filter').value = currentStudentId;
       // 学校全体ビューを最初に表示
       showView('school');
     });
