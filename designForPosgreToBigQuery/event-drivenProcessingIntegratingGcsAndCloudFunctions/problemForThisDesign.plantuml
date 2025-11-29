@@ -1,0 +1,100 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title マグナ学習ダッシュボード データフロー案（マスタ入力レイヤ付き）
+
+actor Student as "生徒"
+actor Teacher as "英語専科教員 / 塾講師"
+actor Internal as "社内オペレーション\n(CS / 営業 / 管理担当)"
+
+rectangle "マグナ側システム" {
+  component App as "マグナアプリ\n(ゲーム本体)"
+  database RawSrc as "学習履歴テーブル\n(マグナDB / PostgreSQL)"
+}
+
+rectangle "生徒・教員・組織マスタ\n（Google スプレッドシート）" {
+  component RosterSheet as "生徒名簿シート\n(user_directory_sheets)"
+  component TeacherSheet as "教員権限シート\n(teacher_access_rules_sheets)"
+  component SchoolSheet as "学校・ブランドマスタシート\n(school_master_sheets)"
+}
+
+rectangle "GCP / BigQuery" {
+  database BQRaw as "raw_learning_events\n(学習イベントログ)"
+  database BQUser as "user_directory\n(生徒マスタ)"
+  database BQTeacher as "teacher_access_rules\n(教員権限マスタ)"
+  database BQSchool as "school_master\n(学校・ブランド情報)"
+  database BQSummary as "aggregate_daily_student_summary\n(日次×生徒の集計テーブル)"
+  database BQViews as "v_dashboard_*_rls\n(ダッシュボード用RLSビュー)"
+}
+
+rectangle "Looker Studio" {
+  component Dashboard as "学習ダッシュボード\n(学校ビュー / 塾ビュー / 自治体ビュー)"
+}
+
+' --- 学習ログの流れ ---
+
+Student --> App : プレイ\n(user_id だけ送信)
+App --> RawSrc : 学習ログ保存\n(user_id, 日付, 学習イベント...)
+
+RawSrc --> BQRaw : ETLパイプラインで連携\n(SakuraCloud + GCS + Cloud Functions)
+
+' --- マスタ入力の流れ ---
+
+Internal --> RosterSheet : 生徒名簿を入力\nuser_id, 学校, 学年, クラス, brand...
+Internal --> TeacherSheet : 先生のメールアドレスと\n担当範囲を入力\n(teacher_email, school_id, grade, class_id...)
+Internal --> SchoolSheet : 学校名・ブランド・自治体IDなどを管理\n(school_id, brand_id, municipality_id...)
+
+RosterSheet --> BQUser : Sheets コネクタで同期
+TeacherSheet --> BQTeacher : Sheets コネクタで同期
+SchoolSheet --> BQSchool : Sheets コネクタで同期
+
+' --- 集計処理 ---
+
+' 日次×生徒の集計（user_directory をJOIN）
+BQRaw --> BQSummary : user_id でJOINし\n日次×生徒で集計
+BQUser --> BQSummary
+BQSchool --> BQSummary : school_id / brand_id でJOIN\n(自治体・ブランド粒度の集計用)
+
+' --- ダッシュボード用ビュー + 行レベルセキュリティ ---
+
+BQSummary --> BQViews : 用途別ビューを作成\n(学校/学年/クラス/個人・自治体・塾ブランドなど)
+BQTeacher --> BQViews : teacher_access_rules を元にRLS適用\n(teacher_email でフィルタ)
+
+Teacher --> Dashboard : Googleアカウントでアクセス\n(新しいログイン画面なし)
+Dashboard --> BQViews : 担当範囲に応じた集計クエリ
+
+note right of BQSummary
+  ここで初めて計算できるもの:
+  - 自治体 / 塾ブランドごとの利用状況
+  - 学校・学年・クラス・個人別の指標
+  - 学習時間・マスター数などの時間系指標
+end note
+
+note right of RosterSheet #FFEEEE
+  生徒の user_id と学校側名簿の対応付けは
+  CS / 営業などの運用前提（要検討）
+  ・どのタイミングで登録するか
+  ・どこまで自動化できるか
+end note
+
+note right of TeacherSheet #FFEEEE
+  teacher_email と担当クラス情報も
+  同様に運用で管理する前提（要検討）
+  ・どの単位で権限を与えるか（学校/学年/クラス）
+  ・誰が変更を反映するか
+end note
+
+note bottom
+  ポイント:
+  - ダッシュボードは Looker Studio のまま
+  - 新しい認証システムは作らない
+  - 学校/学年/クラス/個人/自治体/塾ブランドの粒度は
+    aggregate_daily_student_summary を基盤に、
+    teacher_access_rules を使った RLSビュー
+    (v_dashboard_*_rls) で制御する
+  - マスタ系はすべて Google Sheets を入口にし、
+    BigQuery には同期済みテーブルとして保持する
+end note
+
+@enduml

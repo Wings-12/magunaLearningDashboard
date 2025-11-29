@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マグナ学習管理ダッシュボード (モックアップ)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+  <style>
+    body {
+      min-width: 900px;
+    }
+    .grid-fixed-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); /* ★変更: PCは2列以上、モバイルは1列に自動調整 */
+    }
+    /* Chart.jsのツールチップがTailwind CSSより前面に出るように調整 */
+    canvas {
+      /* グラフがコンテナの高さを超えないように */
+      max-height: 300px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 320px; /* ★変更: スクロールを抑えるため高さをコンパクトに */
+      width: 100%;
+    }
+
+    /* 選択中のタブのスタイル */
+    .tab-active {
+      border-bottom: 2px solid #3B82F6;
+      /* blue-500 */
+      color: #3B82F6;
+      font-weight: 600;
+    }
+
+    .tab-inactive {
+      border-bottom: 2px solid transparent;
+      color: #6B7280;
+      /* gray-500 */
+    }
+
+    .period-btn {
+      padding: 0.5rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #475569;
+      background-color: #ffffff;
+      border: 0;
+      border-right: 1px solid #e2e8f0;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .period-btn:last-child {
+      border-right: none;
+    }
+
+    .period-btn-active {
+      background-color: #1d4ed8;
+      color: #ffffff;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 font-sans">
+  <div class="container mx-auto p-4 max-w-7xl">
+
+    <!-- ヘッダーとタブナビゲーション -->
+    <header class="mb-4 space-y-3">
+      <div class="bg-white rounded-lg shadow-sm p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="space-y-1">
+          <p class="text-xs font-semibold text-slate-500 tracking-wide uppercase">ダッシュボード</p>
+          <div class="flex flex-col lg:flex-row lg:items-center lg:gap-3">
+            <h1 class="text-3xl font-bold text-slate-800">マグナ学習管理ダッシュボード</h1>
+            <span class="text-sm text-slate-500">〇〇学園 中等部 / 1〜3年生</span>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div class="flex items-center gap-2">
+            <label for="grade-filter" class="text-sm font-semibold text-slate-600">学年:</label>
+            <select id="grade-filter" class="border rounded px-3 py-1 text-sm">
+              <option value="all">すべての学年</option>
+              <option value="1">1年生</option>
+              <option value="2">2年生</option>
+              <option value="3">3年生</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-600">集計期間</span>
+            <div id="period-toggle"
+              class="inline-flex rounded-md border border-slate-200 overflow-hidden shadow-sm divide-x divide-slate-200">
+              <button type="button" class="period-btn period-btn-active" data-period-button data-period="monthly">今月</button>
+              <button type="button" class="period-btn" data-period-button data-period="weekly">今週</button>
+              <button type="button" class="period-btn" data-period-button data-period="daily">前日</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="bg-white rounded-lg shadow-sm">
+        <div class="flex border-b border-slate-200">
+          <button id="tab-school" onclick="showView('school')"
+            class="tab-active py-3 px-6 text-sm focus:outline-none">学校全体</button>
+          <button id="tab-class" onclick="showView('class')"
+            class="tab-inactive py-3 px-6 text-sm focus:outline-none">クラス詳細</button>
+          <button id="tab-student" onclick="showView('student')"
+            class="tab-inactive py-3 px-6 text-sm focus:outline-none">生徒詳細</button>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <!-- #################### -->
+      <!-- 学校全体ビュー -->
+      <!-- #################### -->
+      <div id="school-view" class="space-y-4">
+        <div class="bg-white p-4 rounded-lg shadow-sm flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div class="flex items-center gap-3">
+            <span id="period-chip"
+              class="text-xs tracking-wide uppercase font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">--</span>
+            <div class="flex flex-col leading-tight">
+              <span class="text-[11px] text-slate-500">現在の集計範囲</span>
+              <span id="period-label" class="text-sm font-semibold text-slate-800">--</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500">授業外のアウトプットを一目で伝えるスナップショット。</p>
+        </div>
+
+        <section class="space-y-3">
+          <div class="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex flex-col gap-2">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">マグたん 4技能合計</p>
+              <p id="metric-magtan-total" class="text-3xl font-bold text-slate-900">--</p>
+              <p class="text-xs text-slate-500">合計マスター数</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex flex-col gap-2">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">マグフレ マスター数</p>
+              <p id="metric-magfre" class="text-3xl font-bold text-indigo-600">--</p>
+              <p class="text-xs text-slate-500">フレーズ暗記状況</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex flex-col gap-2">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">AI英会話 利用時間</p>
+              <p id="metric-ai-minutes" class="text-3xl font-bold text-emerald-600">--</p>
+              <p id="metric-ai-hours" class="text-xs text-slate-500">--</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex flex-col gap-2">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">4技能バランス</p>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="p-2 bg-slate-50 rounded" data-magtan-card="listen">
+                  <p class="text-[11px] text-slate-500">聞く</p>
+                  <p class="text-lg font-semibold text-slate-800" data-magtan-value="listen">--</p>
+                  <div class="mt-1 h-1.5 bg-slate-200 rounded overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded" data-magtan-bar="listen" style="width:0%;"></div>
+                  </div>
+                </div>
+                <div class="p-2 bg-slate-50 rounded" data-magtan-card="speak">
+                  <p class="text-[11px] text-slate-500">話す</p>
+                  <p class="text-lg font-semibold text-slate-800" data-magtan-value="speak">--</p>
+                  <div class="mt-1 h-1.5 bg-slate-200 rounded overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded" data-magtan-bar="speak" style="width:0%;"></div>
+                  </div>
+                </div>
+                <div class="p-2 bg-slate-50 rounded" data-magtan-card="read">
+                  <p class="text-[11px] text-slate-500">読む</p>
+                  <p class="text-lg font-semibold text-slate-800" data-magtan-value="read">--</p>
+                  <div class="mt-1 h-1.5 bg-slate-200 rounded overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded" data-magtan-bar="read" style="width:0%;"></div>
+                  </div>
+                </div>
+                <div class="p-2 bg-slate-50 rounded" data-magtan-card="write">
+                  <p class="text-[11px] text-slate-500">書く</p>
+                  <p class="text-lg font-semibold text-slate-800" data-magtan-value="write">--</p>
+                  <div class="mt-1 h-1.5 bg-slate-200 rounded overflow-hidden">
+                    <div class="h-full bg-blue-500 rounded" data-magtan-bar="write" style="width:0%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex flex-col gap-2">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">バトル プレイ回数</p>
+              <p id="metric-battle-total" class="text-3xl font-bold text-amber-600">--</p>
+              <div class="mt-1 h-2 bg-slate-100 rounded flex overflow-hidden">
+                <div id="battle-pron-bar" class="bg-rose-400" style="width:50%;"></div>
+                <div id="battle-quiz-bar" class="bg-amber-400" style="width:50%;"></div>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-slate-500">
+                <span>発音 <span id="metric-pronounce" class="font-semibold text-rose-600">--</span></span>
+                <span>クイズ <span id="metric-quiz" class="font-semibold text-amber-600">--</span></span>
+              </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex flex-col gap-2">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">キーフレーズ発音</p>
+              <p id="metric-keyphrase" class="text-3xl font-bold text-blue-600">--</p>
+              <p class="text-xs text-slate-500">AI/バトルでの発音トライ回数</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="grid-fixed-2 gap-4">
+          <div class="bg-white p-4 rounded-lg shadow-sm chart-container">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-lg font-semibold text-slate-700">プレイ時間と習得単語</h3>
+              <span class="text-[11px] font-semibold text-blue-600">学習効果</span>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">プレイ時間が長いほど語彙が増えている傾向。</p>
+            <canvas id="comparison-chart"></canvas>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow-sm chart-container">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-lg font-semibold text-slate-700">学習時間の内訳</h3>
+              <span class="text-[11px] font-semibold text-emerald-600">活動割合</span>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">ストーリー / バトル / 単語学習のバランス。</p>
+            <canvas id="breakdown-chart"></canvas>
+          </div>
+        </div>
+
+        <section class="space-y-3 mb-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-700">指標別 No.1 クラス</h2>
+            <span class="text-xs text-slate-500">活用例を一覧</span>
+          </div>
+          <div id="top-class-grid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <!-- JSによってカードが挿入されます -->
+          </div>
+        </section>
+      </div>
+
+      <!-- #################### -->
+      <!-- クラス詳細ビュー -->
+      <!-- #################### -->
+      <div id="class-view" class="hidden">
+        <!-- クラスフィルタ -->
+        <div class="mb-4 bg-white p-4 rounded-lg shadow-sm flex items-center space-x-2">
+          <label for="class-filter" class="text-sm font-semibold text-slate-600">クラス選択:</label>
+          <select id="class-filter" class="border rounded px-3 py-1 text-sm">
+            <!-- JSでクラス一覧を挿入 -->
+          </select>
+        </div>
+
+        <!-- グラフエリア (2カラム固定) -->
+        <div class="grid-fixed-2 gap-4 mb-4">
+          <!-- 4技能バランス -->
+          <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
+            <h3 class="text-lg font-semibold text-slate-700 mb-2">4技能バランス (クラス平均 vs 学年平均)</h3>
+            <canvas id="skill-bar-chart"></canvas>
+          </div>
+          <!-- 成長の軌跡 -->
+          <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
+            <h3 class="text-lg font-semibold text-slate-700 mb-2">クラスの成長の軌跡 (習得単語数)</h3>
+            <canvas id="growth-line-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- 生徒一覧 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
+          <h3 class="text-lg font-semibold text-slate-700 p-6">生徒一覧 (クリックして並び替え)</h3>
+          <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50">
+              <!-- ▼▼▼ ここからUI変更 ▼▼▼ -->
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable"
+                  data-sort="name">生徒名</th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable"
+                  data-sort="x">今月の学習時間</th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider cursor-pointer sortable"
+                  data-sort="y">今月の習得単語数</th>
+                <!-- 「先月比」の列を削除 -->
+              </tr>
+              <!-- ▲▲▲ ここまでUI変更 ▲▲▲ -->
+            </thead>
+            <tbody id="student-list" class="bg-white divide-y divide-slate-200">
+              <!-- JSによって生徒が挿入されます -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- #################### -->
+      <!-- 生徒詳細ビュー -->
+      <!-- #################### -->
+      <div id="student-view" class="hidden">
+        <!-- フィルタ -->
+        <div class="mb-4 bg-white p-4 rounded-lg shadow-sm flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <label for="student-class-filter" class="text-sm font-semibold text-slate-600">クラス選択:</label>
+            <select id="student-class-filter" class="border rounded px-3 py-1 text-sm">
+              <!-- JSでクラス一覧を挿入 -->
+            </select>
+          </div>
+          <div class="flex items-center space-x-2">
+            <label for="student-filter" class="text-sm font-semibold text-slate-600">生徒選択:</label>
+            <select id="student-filter" class="border rounded px-3 py-1 text-sm">
+              <!-- JSによって生徒が挿入されます -->
+            </select>
+          </div>
+        </div>
+
+        <!-- 生徒サマリー -->
+        <div class="mb-4">
+          <h2 id="student-name-header" class="text-2xl font-bold text-slate-800 mb-3">生徒 A1</h2>
+          <div class="grid-fixed-2 gap-4">
+            <!-- 覚えた単語数 (クラス内順位) -->
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center">
+              <div class="text-sm font-medium text-slate-500">おぼえた単語数 (クラス内順位)</div>
+              <div id="student-rank-words" class="text-3xl font-bold text-slate-700 my-2">--</div>
+            </div>
+            <!-- 今月の習得単語数 -->
+            <div class="bg-white p-6 rounded-lg shadow-sm text-center">
+              <div class="text-sm font-medium text-slate-500">今月の習得単語数</div>
+              <div id="student-summary-words" class="text-4xl font-bold text-green-600 my-2">
+                <!-- JSで "510語" のように挿入 -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- グラフエリア (2カラム固定) -->
+        <div class="grid-fixed-2 gap-4 mb-4">
+          <!-- 6技能バランス (棒グラフ) -->
+          <div class="flex flex-col space-y-3">
+            <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">6技能バランス (個人 vs クラス平均)</h3>
+              <canvas id="student-skill-bar-chart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center text-sm text-slate-600 font-medium">
+              青色（本人）とグレー（クラス平均）を比べ、得意・不得意なスキルを把握できます。
+            </div>
+          </div>
+
+          <!-- 学習時間の内訳 -->
+          <div class="flex flex-col space-y-3">
+            <div class="bg-white p-6 rounded-lg shadow-sm chart-container">
+              <h3 class="text-lg font-semibold text-slate-700 mb-2">学習時間の内訳 (ゲームプレイ = 学習活動)</h3>
+              <canvas id="student-breakdown-chart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm text-center text-sm text-slate-600 font-medium">
+              ストーリー（聞く）中心か、バトル（話す）中心か、学習の「偏り」＝「好み」が分かります。
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ####################
+    // ダミーデータ
+    // ####################
+    // ▼▼▼ ここからUI変更 ▼▼▼
+    // prev_x, prev_y を削除
+    const allStudentData = [
+      // 1年生
+      { id: "A1", name: "生徒 A1", grade: "1", classId: "1-1", x: 19.9, y: 255, skills: { listen: 90, speak: 60, read: 70, write: 50, phrase: 40, ai: 80 }, breakdown: { story: 60, battle: 30, mini: 10 } },
+      { id: "A2", name: "生徒 A2", grade: "1", classId: "1-1", x: 15.2, y: 350, skills: { listen: 70, speak: 80, read: 80, write: 75, phrase: 70, ai: 90 }, breakdown: { story: 30, battle: 40, mini: 30 } },
+      { id: "A3", name: "生徒 A3", grade: "1", classId: "1-1", x: 8.1, y: 150, skills: { listen: 60, speak: 50, read: 60, write: 40, phrase: 30, ai: 50 }, breakdown: { story: 50, battle: 20, mini: 30 } },
+      { id: "A4", name: "生徒 A4", grade: "1", classId: "1-1", x: 25.0, y: 410, skills: { listen: 85, speak: 90, read: 80, write: 80, phrase: 80, ai: 100 }, breakdown: { story: 40, battle: 40, mini: 20 } },
+      { id: "A5", name: "生徒 A5", grade: "1", classId: "1-1", x: 3.5, y: 50, skills: { listen: 40, speak: 30, read: 40, write: 20, phrase: 10, ai: 10 }, breakdown: { story: 70, battle: 10, mini: 20 } },
+      { id: "B1", name: "生徒 B1", grade: "1", classId: "1-2", x: 22.0, y: 380, skills: { listen: 80, speak: 85, read: 75, write: 70, phrase: 75, ai: 95 }, breakdown: { story: 40, battle: 40, mini: 20 } },
+      { id: "B2", name: "生徒 B2", grade: "1", classId: "1-2", x: 18.5, y: 310, skills: { listen: 75, speak: 70, read: 80, write: 65, phrase: 60, ai: 70 }, breakdown: { story: 50, battle: 30, mini: 20 } },
+      { id: "B3", name: "生徒 B3", grade: "1", classId: "1-2", x: 10.0, y: 180, skills: { listen: 65, speak: 60, read: 70, write: 55, phrase: 50, ai: 60 }, breakdown: { story: 60, battle: 20, mini: 20 } },
+      { id: "B4", name: "生徒 B4", grade: "1", classId: "1-2", x: 5.0, y: 80, skills: { listen: 50, speak: 40, read: 55, write: 30, phrase: 20, ai: 30 }, breakdown: { story: 70, battle: 20, mini: 10 } },
+      { id: "B5", name: "生徒 B5", grade: "1", classId: "1-2", x: 12.0, y: 220, skills: { listen: 70, speak: 65, read: 70, write: 60, phrase: 55, ai: 65 }, breakdown: { story: 55, battle: 25, mini: 20 } },
+      // 2年生
+      { id: "C1", name: "生徒 C1", grade: "2", classId: "2-1", x: 23.5, y: 480, skills: { listen: 88, speak: 85, read: 90, write: 82, phrase: 78, ai: 95 }, breakdown: { story: 35, battle: 45, mini: 20 } },
+      { id: "C2", name: "生徒 C2", grade: "2", classId: "2-1", x: 17.0, y: 320, skills: { listen: 72, speak: 68, read: 75, write: 70, phrase: 65, ai: 70 }, breakdown: { story: 45, battle: 30, mini: 25 } },
+      { id: "C3", name: "生徒 C3", grade: "2", classId: "2-1", x: 11.5, y: 210, skills: { listen: 68, speak: 62, read: 70, write: 60, phrase: 55, ai: 60 }, breakdown: { story: 55, battle: 25, mini: 20 } },
+      { id: "C4", name: "生徒 C4", grade: "2", classId: "2-1", x: 6.0, y: 120, skills: { listen: 55, speak: 48, read: 58, write: 45, phrase: 35, ai: 35 }, breakdown: { story: 65, battle: 20, mini: 15 } },
+      { id: "C5", name: "生徒 C5", grade: "2", classId: "2-1", x: 19.2, y: 360, skills: { listen: 80, speak: 82, read: 78, write: 76, phrase: 70, ai: 88 }, breakdown: { story: 40, battle: 35, mini: 25 } },
+      { id: "D1", name: "生徒 D1", grade: "2", classId: "2-2", x: 20.5, y: 390, skills: { listen: 82, speak: 78, read: 80, write: 74, phrase: 72, ai: 92 }, breakdown: { story: 38, battle: 37, mini: 25 } },
+      { id: "D2", name: "生徒 D2", grade: "2", classId: "2-2", x: 14.7, y: 260, skills: { listen: 70, speak: 65, read: 72, write: 66, phrase: 60, ai: 68 }, breakdown: { story: 48, battle: 32, mini: 20 } },
+      { id: "D3", name: "生徒 D3", grade: "2", classId: "2-2", x: 9.5, y: 180, skills: { listen: 62, speak: 58, read: 65, write: 55, phrase: 48, ai: 55 }, breakdown: { story: 58, battle: 22, mini: 20 } },
+      { id: "D4", name: "生徒 D4", grade: "2", classId: "2-2", x: 3.8, y: 70, skills: { listen: 45, speak: 38, read: 50, write: 35, phrase: 25, ai: 25 }, breakdown: { story: 70, battle: 15, mini: 15 } },
+      { id: "D5", name: "生徒 D5", grade: "2", classId: "2-2", x: 16.0, y: 300, skills: { listen: 75, speak: 72, read: 74, write: 68, phrase: 64, ai: 72 }, breakdown: { story: 50, battle: 28, mini: 22 } },
+      // 3年生
+      { id: "E1", name: "生徒 E1", grade: "3", classId: "3-1", x: 26.0, y: 520, skills: { listen: 92, speak: 90, read: 95, write: 88, phrase: 85, ai: 105 }, breakdown: { story: 33, battle: 47, mini: 20 } },
+      { id: "E2", name: "生徒 E2", grade: "3", classId: "3-1", x: 18.8, y: 370, skills: { listen: 82, speak: 76, read: 84, write: 79, phrase: 72, ai: 90 }, breakdown: { story: 42, battle: 38, mini: 20 } },
+      { id: "E3", name: "生徒 E3", grade: "3", classId: "3-1", x: 12.5, y: 240, skills: { listen: 70, speak: 68, read: 72, write: 65, phrase: 60, ai: 68 }, breakdown: { story: 52, battle: 30, mini: 18 } },
+      { id: "E4", name: "生徒 E4", grade: "3", classId: "3-1", x: 7.2, y: 150, skills: { listen: 58, speak: 52, read: 60, write: 50, phrase: 42, ai: 45 }, breakdown: { story: 62, battle: 23, mini: 15 } },
+      { id: "E5", name: "生徒 E5", grade: "3", classId: "3-1", x: 4.0, y: 90, skills: { listen: 48, speak: 40, read: 50, write: 38, phrase: 30, ai: 28 }, breakdown: { story: 70, battle: 20, mini: 10 } },
+      { id: "F1", name: "生徒 F1", grade: "3", classId: "3-2", x: 21.7, y: 430, skills: { listen: 85, speak: 82, read: 86, write: 80, phrase: 76, ai: 98 }, breakdown: { story: 36, battle: 44, mini: 20 } },
+      { id: "F2", name: "生徒 F2", grade: "3", classId: "3-2", x: 16.9, y: 310, skills: { listen: 74, speak: 70, read: 76, write: 70, phrase: 66, ai: 74 }, breakdown: { story: 46, battle: 34, mini: 20 } },
+      { id: "F3", name: "生徒 F3", grade: "3", classId: "3-2", x: 10.2, y: 190, skills: { listen: 64, speak: 60, read: 66, write: 57, phrase: 52, ai: 58 }, breakdown: { story: 56, battle: 24, mini: 20 } },
+      { id: "F4", name: "生徒 F4", grade: "3", classId: "3-2", x: 5.5, y: 120, skills: { listen: 52, speak: 46, read: 54, write: 44, phrase: 38, ai: 36 }, breakdown: { story: 66, battle: 21, mini: 13 } },
+      { id: "F5", name: "生徒 F5", grade: "3", classId: "3-2", x: 14.0, y: 260, skills: { listen: 70, speak: 68, read: 72, write: 64, phrase: 58, ai: 66 }, breakdown: { story: 48, battle: 32, mini: 20 } },
+    ];
+
+    const timeframeMetrics = {
+      monthly: {
+        label: "今月の累計（30日間）",
+        shortLabel: "月次",
+        magtan: { listen: 4200, speak: 3600, read: 3900, write: 3500 },
+        magfre: 1580,
+        aiMinutes: 2480,
+        battle: { pronounce: 1820, quiz: 1430 }
+      },
+      weekly: {
+        label: "直近7日間",
+        shortLabel: "週次",
+        magtan: { listen: 1050, speak: 880, read: 910, write: 840 },
+        magfre: 420,
+        aiMinutes: 640,
+        battle: { pronounce: 430, quiz: 320 }
+      },
+      daily: {
+        label: "前日（24時間）",
+        shortLabel: "日次",
+        magtan: { listen: 160, speak: 140, read: 150, write: 135 },
+        magfre: 65,
+        aiMinutes: 92,
+        battle: { pronounce: 68, quiz: 52 }
+      }
+    };
+    // ▲▲▲ ここまでUI変更 ▲▲▲
+
+    // 全学年平均 (ダミー)
+    const gradeAvgSkills = { listen: 70, speak: 65, read: 70, write: 60, phrase: 50, ai: 60 };
+    const gradeAvgGrowth = [
+      { month: "4月", words: 50 },
+      { month: "5月", words: 120 },
+      { month: "6月", words: 200 },
+      { month: "7月", words: 280 },
+      { month: "8月", words: 350 },
+      { month: "9月", words: 430 },
+    ];
+
+    // グローバル変数 (Chartインスタンス保持用)
+    const charts = {};
+    let currentSort = { column: 'x', order: 'desc' };
+    let currentClassId = "1-1";
+    let currentStudentId = "A1";
+    let currentPeriod = "monthly";
+
+    function formatClassLabel(classId) {
+      if (!classId) return '';
+      const parts = classId.split('-');
+      if (parts.length !== 2) return classId;
+      return `${parts[0]}年${parts[1]}組`;
+    }
+
+    function getSortedClassIds() {
+      return [...new Set(allStudentData.map(s => s.classId))]
+        .sort((a, b) => a.localeCompare(b, 'ja', { numeric: true }));
+    }
+
+    function initializeClassSelectors() {
+      const classIds = getSortedClassIds();
+      const classFilter = document.getElementById('class-filter');
+      const studentClassFilter = document.getElementById('student-class-filter');
+      [classFilter, studentClassFilter].forEach(select => {
+        if (!select) return;
+        select.innerHTML = '';
+        classIds.forEach(id => {
+          const option = document.createElement('option');
+          option.value = id;
+          option.text = formatClassLabel(id);
+          select.appendChild(option);
+        });
+      });
+      if (!classIds.includes(currentClassId)) {
+        currentClassId = classIds[0] || '';
+      }
+      if (!allStudentData.some(s => s.id === currentStudentId && s.classId === currentClassId)) {
+        const fallbackStudent = allStudentData.find(s => s.classId === currentClassId);
+        currentStudentId = fallbackStudent ? fallbackStudent.id : null;
+      }
+      if (classFilter) classFilter.value = currentClassId || '';
+      if (studentClassFilter) studentClassFilter.value = currentClassId || '';
+    }
+
+    function filterDataByGrade(gradeValue) {
+      if (!gradeValue || gradeValue === 'all') {
+        return allStudentData;
+      }
+      return allStudentData.filter(student => student.grade === gradeValue);
+    }
+
+    function setActivePeriodButton(period) {
+      document.querySelectorAll('[data-period-button]').forEach(btn => {
+        if (btn.dataset.period === period) {
+          btn.classList.add('period-btn-active');
+        } else {
+          btn.classList.remove('period-btn-active');
+        }
+      });
+    }
+
+    function updatePeriodMetrics() {
+      const metrics = timeframeMetrics[currentPeriod];
+      if (!metrics) return;
+
+      const periodLabel = document.getElementById('period-label');
+      if (periodLabel) {
+        periodLabel.innerText = metrics.label;
+      }
+      const periodChip = document.getElementById('period-chip');
+      if (periodChip) {
+        periodChip.innerText = metrics.shortLabel || '';
+      }
+
+      const magtanValues = metrics.magtan || {};
+      const magtanTotal = Object.values(magtanValues).reduce((sum, value) => sum + value, 0);
+      const magtanTotalEl = document.getElementById('metric-magtan-total');
+      if (magtanTotalEl) {
+        magtanTotalEl.innerText = `${magtanTotal.toLocaleString()} マスター`;
+      }
+      const maxSkillValue = Math.max(...Object.values(magtanValues), 0);
+      Object.entries(magtanValues).forEach(([skill, value]) => {
+        const valueEl = document.querySelector(`[data-magtan-value="${skill}"]`);
+        if (valueEl) {
+          valueEl.innerText = `${value.toLocaleString()} 件`;
+        }
+        const barEl = document.querySelector(`[data-magtan-bar="${skill}"]`);
+        if (barEl) {
+          const percent = maxSkillValue > 0 ? (value / maxSkillValue) * 100 : 0;
+          barEl.style.width = `${percent}%`;
+        }
+      });
+
+      const magFreEl = document.getElementById('metric-magfre');
+      if (magFreEl) {
+        magFreEl.innerText = `${metrics.magfre.toLocaleString()} フレーズ`;
+      }
+      const aiTimeEl = document.getElementById('metric-ai-minutes');
+      if (aiTimeEl) {
+        aiTimeEl.innerText = `${metrics.aiMinutes.toLocaleString()} 分`;
+      }
+      const aiHoursEl = document.getElementById('metric-ai-hours');
+      if (aiHoursEl) {
+        aiHoursEl.innerText = `約 ${(metrics.aiMinutes / 60).toFixed(1)} 時間の対話学習`;
+      }
+
+      const pronEl = document.getElementById('metric-pronounce');
+      if (pronEl) {
+        pronEl.innerText = `${metrics.battle.pronounce.toLocaleString()} 回`;
+      }
+      const quizEl = document.getElementById('metric-quiz');
+      if (quizEl) {
+        quizEl.innerText = `${metrics.battle.quiz.toLocaleString()} 回`;
+      }
+      const battleTotal = metrics.battle.pronounce + metrics.battle.quiz;
+      const battleTotalEl = document.getElementById('metric-battle-total');
+      if (battleTotalEl) {
+        battleTotalEl.innerText = `${battleTotal.toLocaleString()} 回`;
+      }
+      const keyPhraseEl = document.getElementById('metric-keyphrase');
+      if (keyPhraseEl) {
+        keyPhraseEl.innerText = `${metrics.battle.pronounce.toLocaleString()} 回`;
+      }
+      const pronBar = document.getElementById('battle-pron-bar');
+      const quizBar = document.getElementById('battle-quiz-bar');
+      const pronPercent = battleTotal > 0 ? (metrics.battle.pronounce / battleTotal) * 100 : 50;
+      if (pronBar) {
+        pronBar.style.width = `${pronPercent}%`;
+      }
+      if (quizBar) {
+        quizBar.style.width = `${100 - pronPercent}%`;
+      }
+
+      setActivePeriodButton(currentPeriod);
+    }
+
+    // ####################
+    // 汎用ヘルパー関数
+    // ####################
+
+    // Chart.jsインスタンスを破棄するヘルパー
+    function destroyChart(chartId) {
+      if (charts[chartId]) {
+        charts[chartId].destroy();
+        delete charts[chartId];
+      }
+    }
+
+    // ネストされたプロパティを安全に取得するヘルパー
+    function getNestedProperty(obj, path) {
+      // 'skills.ai' -> ['skills', 'ai']
+      return path.split('.').reduce((acc, part) => {
+        // (acc && acc[part] !== undefined) ? acc[part] : 0
+        // 0を返す前に、acc[part]がnullの場合も考慮する
+        if (acc && acc[part] !== undefined && acc[part] !== null) {
+          return acc[part];
+        }
+        return 0; // 見つからないかundefined/nullなら0を返す
+      }, obj);
+    }
+
+    // 平均を計算するヘルパー (ネスト対応)
+    function getAverage(data, key) {
+      if (data.length === 0) return 0;
+      const total = data.reduce((acc, item) => {
+        const value = getNestedProperty(item, key); // 修正！
+        // valueが数値であることを確認
+        return acc + (typeof value === 'number' ? value : 0);
+      }, 0);
+      return total / data.length;
+    }
+
+
+    // スキルの平均を計算するヘルパー
+    function getAverageSkills(data) {
+      const avg = { listen: 0, speak: 0, read: 0, write: 0, phrase: 0, ai: 0 };
+      if (data.length === 0) return avg;
+      const keys = Object.keys(avg); // ['listen', 'speak', ...]
+      for (const key of keys) {
+        // 'skills.listen' のようなネストしたキーを渡す
+        avg[key] = getAverage(data, `skills.${key}`);
+      }
+      return avg;
+    }
+
+    // ####################
+    // 学校全体ビュー (School View)
+    // ####################
+
+    // KPI: 習得単語数 (ドーナツ)
+    function createKpiWordsChart(data) {
+      destroyChart('kpi-words-chart');
+      const avgWords = getAverage(data, 'y');
+      const targetWords = 1800;
+      const percent = (targetWords > 0) ? Math.round((avgWords / targetWords) * 100) : 0;
+
+      document.getElementById('kpi-words-percent').innerText = `${percent}%`;
+
+      const ctx = document.getElementById('kpi-words-chart').getContext('2d');
+      charts['kpi-words-chart'] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [avgWords, Math.max(0, targetWords - avgWords)], // マイナスにならないように
+            backgroundColor: ['#4ade80', '#e5e7eb'], // green-400, gray-200
+            borderWidth: 0,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '75%',
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          }
+        }
+      });
+    }
+
+    // グラフ: 学習効果の証明 (棒グラフ)
+    function createComparisonBarChart(data) {
+      destroyChart('comparison-chart');
+      if (data.length === 0) {
+        return; // データがなければ何もしない
+      }
+
+      const sortedByTime = [...data].sort((a, b) => a.x - b.x);
+      const shortest = sortedByTime[0];
+      const longest = sortedByTime[sortedByTime.length - 1];
+
+      const ctx = document.getElementById('comparison-chart').getContext('2d');
+      charts['comparison-chart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['習得単語数'],
+          datasets: [
+            {
+              label: `プレイ時間 最短 (${shortest.name}: ${shortest.x}h)`,
+              data: [shortest.y],
+              backgroundColor: '#94a3b8', // slate-400
+            },
+            {
+              label: `プレイ時間 最長 (${longest.name}: ${longest.x}h)`,
+              data: [longest.y],
+              backgroundColor: '#3b82f6', // blue-500
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12 }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.dataset.label}: ${context.raw}単語`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: '習得単語数'
+              }
+            },
+            x: {
+              title: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+      // JavaScriptによる結論テキストの更新は行わない
+    }
+
+    // グラフ: 学習時間の内訳 (ドーナツ)
+    function createBreakdownChart(data) {
+      destroyChart('breakdown-chart');
+      if (data.length === 0) {
+         return; // データがなければ何もしない
+      }
+
+      const avgBreakdown = { story: 0, battle: 0, mini: 0 };
+      const keys = Object.keys(avgBreakdown);
+      for (const key of keys) {
+        avgBreakdown[key] = getAverage(data, `breakdown.${key}`);
+      }
+
+      const ctx = document.getElementById('breakdown-chart').getContext('2d');
+      charts['breakdown-chart'] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: [`ストーリー (聞く・読む)`, `バトル (話す・書く)`, `単語学習 (4技能)`],
+          datasets: [{
+            data: [avgBreakdown.story, avgBreakdown.battle, avgBreakdown.mini],
+            backgroundColor: ['#60a5fa', '#f87171', '#facc15'], // blue-400, red-400, yellow-400
+            borderColor: '#ffffff',
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12 }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.label}: ${context.raw.toFixed(1)}%`
+              }
+            }
+          }
+        }
+      });
+      // JavaScriptによる結論テキストの更新は行わない
+    }
+
+    // No.1 クラス グリッド
+    function renderTop1Grid(data) {
+      const grid = document.getElementById('top-class-grid');
+      grid.innerHTML = '';
+      if (data.length === 0) {
+        grid.innerHTML = '<p class="text-slate-500">データがありません。</p>';
+        return;
+      }
+
+      const metrics = [
+        { key: 'skills.listen', name: '英単語マスター (聞く)', unit: '単語' },
+        { key: 'skills.speak', name: '英単語マスター (話す)', unit: '単語' },
+        { key: 'skills.read', name: '英単語マスター (読む)', unit: '単語' },
+        { key: 'skills.write', name: '英単語マスター (書く)', unit: '単語' },
+        { key: 'skills.phrase', name: '英会話フレーズ数', unit: 'フレーズ' },
+        { key: 'skills.ai', name: 'AI英会話 プレー時間（分）', unit: '分' }
+      ];
+
+      metrics.forEach(metric => {
+        const classAverages = {};
+        data.forEach(student => {
+          if (!classAverages[student.classId]) {
+            classAverages[student.classId] = { total: 0, count: 0, name: student.classId };
+          }
+          // ネストされたプロパティを安全に取得
+          classAverages[student.classId].total += getNestedProperty(student, metric.key);
+          classAverages[student.classId].count++;
+        });
+
+        const sortedClasses = Object.values(classAverages)
+          .map(c => ({ ...c, avg: c.total / c.count }))
+          .sort((a, b) => b.avg - a.avg);
+
+        const topClass = sortedClasses[0];
+        const card = document.createElement('div');
+        card.className = 'bg-white p-4 rounded-lg shadow-sm border border-slate-200';
+
+        // 文字列を変更しない
+        card.innerHTML = `
+          <div class="text-sm font-semibold text-slate-700">${metric.name}</div>
+          <div class="my-2">
+            <span class="text-2xl font-bold text-blue-600">${formatClassLabel(topClass.name) || topClass.name}</span>
+          </div>
+          <div class="text-xs text-slate-500">平均 ${topClass.avg.toFixed(1)} ${metric.unit}</div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    // 学校全体ビュー 更新
+    function updateSchoolView() {
+      const grade = document.getElementById('grade-filter').value;
+      const filteredData = filterDataByGrade(grade);
+
+      createComparisonBarChart(filteredData);
+      createBreakdownChart(filteredData);
+      renderTop1Grid(filteredData);
+    }
+
+
+    // ####################
+    // クラス詳細ビュー (Class View)
+    // ####################
+
+    // グラフ: 4技能バランス (棒グラフ)
+    function createSkillBarChart(data) {
+      destroyChart('skill-bar-chart');
+      if (data.length === 0) return;
+
+      const classAvg = getAverageSkills(data);
+      const classGrade = data[0]?.grade || null;
+      const gradePeerData = classGrade ? allStudentData.filter(s => s.grade === classGrade) : [];
+      const gradeAvg = gradePeerData.length > 0 ? getAverageSkills(gradePeerData) : gradeAvgSkills;
+      const labels = ['聞く', '話す', '読む', '書く'];
+      const classData = [classAvg.listen, classAvg.speak, classAvg.read, classAvg.write];
+      const gradeData = [gradeAvg.listen, gradeAvg.speak, gradeAvg.read, gradeAvg.write];
+
+      const ctx = document.getElementById('skill-bar-chart').getContext('2d');
+      charts['skill-bar-chart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'クラス平均',
+              data: classData,
+              backgroundColor: '#3b82f6', // blue-500
+            },
+            {
+              label: '学年平均',
+              data: gradeData,
+              backgroundColor: '#cbd5e1', // slate-300
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12 }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, max: 100 }
+          }
+        }
+      });
+    }
+
+    // グラフ: 成長の軌跡 (折れ線)
+    function createGrowthLineChart(data) {
+      destroyChart('growth-line-chart');
+      // クラスの成長 (ダミー)
+      const classGrowth = gradeAvgGrowth.map(item => ({
+        month: item.month,
+        words: item.words * (Math.random() * 0.4 + 0.8) // 学年平均の80-120%
+      }));
+
+      const ctx = document.getElementById('growth-line-chart').getContext('2d');
+      charts['growth-line-chart'] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: classGrowth.map(d => d.month),
+          datasets: [
+            {
+              label: 'クラス平均',
+              data: classGrowth.map(d => d.words),
+              borderColor: '#3b82f6', // blue-500
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: true,
+              tension: 0.1
+            },
+            {
+              label: '学年平均',
+              data: gradeAvgGrowth.map(d => d.words),
+              borderColor: '#cbd5e1', // slate-300
+              fill: false,
+              borderDash: [5, 5],
+              tension: 0.1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12 }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: '累計習得単語数' } }
+          }
+        }
+      });
+    }
+
+    // 生徒一覧
+    function renderStudentList(data, sortColumn, sortOrder) {
+      const list = document.getElementById('student-list');
+      list.innerHTML = '';
+
+      // ▼▼▼ ここからUI変更 ▼▼▼
+      const sortedData = [...data].sort((a, b) => {
+        let aVal, bVal;
+        // diff_ のソートロジックを削除
+        aVal = getNestedProperty(a, sortColumn); // 'name' や 'x', 'y'
+        bVal = getNestedProperty(b, sortColumn);
+
+        if (typeof aVal === 'string') {
+          return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      });
+
+      sortedData.forEach(student => {
+        const row = document.createElement('tr');
+
+        row.className = "hover:bg-slate-50"; // C. 画面遷移（クリックイベント）を削除
+
+        // diffX/Yのロジックと、該当セルを削除
+        row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${student.name}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+            <div class="w-24 h-4 bg-slate-200 rounded">
+              <div class="h-4 bg-blue-500 rounded" style="width: ${student.x * 4}%"></div>
+            </div>
+            <span class="ml-2">${student.x.toFixed(1)}h</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+            <div class="w-24 h-4 bg-slate-200 rounded">
+              <div class="h-4 bg-green-500 rounded" style="width: ${student.y / 5}%"></div>
+            </div>
+            <span class="ml-2">${student.y.toFixed(0)}語</span>
+          </td>
+        `;
+        // ▲▲▲ ここまでUI変更 ▲▲▲
+        list.appendChild(row);
+      });
+    }
+
+    // クラス詳細ビュー 更新
+    function updateClassView() {
+      currentClassId = document.getElementById('class-filter').value;
+      const classData = allStudentData.filter(s => s.classId === currentClassId);
+
+      createSkillBarChart(classData);
+      createGrowthLineChart(classData);
+      renderStudentList(classData, currentSort.column, currentSort.order);
+      const studentClassFilter = document.getElementById('student-class-filter');
+      if (studentClassFilter) {
+        studentClassFilter.value = currentClassId;
+      }
+    }
+
+
+    // ####################
+    // 生徒詳細ビュー (Student View)
+    // ####################
+
+    // F. 6技能バランス (棒グラフ)
+    function createStudentSkillBarChart(student, classAvg) {
+        destroyChart('student-skill-bar-chart');
+
+        const labels = ['聞く', '話す', '読む', '書く', 'フレーズ', 'AI会話'];
+        const studentData = [
+            student.skills.listen, student.skills.speak, student.skills.read,
+            student.skills.write, student.skills.phrase, student.skills.ai
+        ];
+        const classData = [
+            classAvg.listen, classAvg.speak, classAvg.read,
+            classAvg.write, classAvg.phrase, classAvg.ai
+        ];
+
+        const ctx = document.getElementById('student-skill-bar-chart').getContext('2d');
+        charts['student-skill-bar-chart'] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: `本人 (${student.name})`,
+                        data: studentData,
+                        backgroundColor: '#3b82f6', // blue-500
+                    },
+                    {
+                        label: 'クラス平均',
+                        data: classData,
+                        backgroundColor: '#cbd5e1', // slate-300
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+    }
+
+    // ▼▼▼ ここからUI変更 ▼▼▼
+    // D. 散布図 (関数を削除)
+    /*
+    function createStudentScatterChart(student, classData) {
+      // ... (関数全体を削除)
+    }
+    */
+    // ▲▲▲ ここまでUI変更 ▲▲▲
+
+
+    // グラフ: 学習時間の内訳 (ドーナツ) - 生徒個人
+    function createStudentBreakdownChart(student) {
+      destroyChart('student-breakdown-chart');
+      const breakdown = student.breakdown;
+
+      const ctx = document.getElementById('student-breakdown-chart').getContext('2d');
+      charts['student-breakdown-chart'] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: [`ストーリー (聞く・読む)`, `バトル (話す・書く)`, `単語学習 (4技能)`],
+          datasets: [{
+            data: [breakdown.story, breakdown.battle, breakdown.mini],
+            backgroundColor: ['#60a5fa', '#f87171', '#facc15'], // blue-400, red-400, yellow-400
+            borderColor: '#ffffff',
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12 }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.label}: ${context.raw.toFixed(1)}%`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 生徒詳細フィルタ populated
+    function populateStudentFilter(classId) {
+      const studentFilter = document.getElementById('student-filter');
+      if (!studentFilter) return;
+      studentFilter.innerHTML = '';
+      if (!classId) {
+        currentStudentId = null;
+        return;
+      }
+
+      const students = allStudentData
+        .filter(s => s.classId === classId)
+        .sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+
+      students.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.id;
+        option.text = s.name;
+        studentFilter.appendChild(option);
+      });
+      // フィルタの現在の値も更新
+      if (students.some(s => s.id === currentStudentId)) {
+        studentFilter.value = currentStudentId;
+      } else if (studentFilter.options.length > 0) {
+        studentFilter.selectedIndex = 0;
+        currentStudentId = studentFilter.value;
+      } else {
+        currentStudentId = null; // 生徒がいない
+      }
+    }
+
+    // 生徒詳細ビュー コンテンツ描画
+    function renderStudentViewContent() {
+      const student = allStudentData.find(s => s.id === currentStudentId);
+      const classData = allStudentData.filter(s => s.classId === currentClassId);
+      const classAvg = getAverageSkills(classData);
+
+      if (!student) {
+        document.getElementById('student-name-header').innerText = "生徒を選択してください";
+        document.getElementById('student-summary-words').innerHTML = '--';
+        document.getElementById('student-rank-words').innerHTML = '--';
+        // グラフをクリア
+        destroyChart('student-skill-bar-chart');
+        // destroyChart('student-scatter-chart'); // 削除済み
+        destroyChart('student-breakdown-chart');
+        return;
+      }
+      // ▲▲▲ ここまでUI変更 ▲▲▲
+
+
+      // ▼▼▼ ここからUI変更ロジック ▼▼▼
+      document.getElementById('student-name-header').innerText = student.name;
+
+      // サマリーカード
+      document.getElementById('student-summary-words').innerHTML = `${student.y.toFixed(0)}語`;
+
+      // 順位カード
+      const classSize = classData.length;
+      const sortedByWords = [...classData].sort((a, b) => b.y - a.y);
+      const wordsRank = sortedByWords.findIndex(s => s.id === student.id) + 1;
+      document.getElementById('student-rank-words').innerHTML =
+        `<span class="text-green-600">${wordsRank}</span><span class="text-lg">位</span> / ${classSize}人中`;
+      // ▲▲▲ ここまでUI変更ロジック ▲▲▲
+
+
+      // グラフ
+      createStudentSkillBarChart(student, classAvg);
+      // createStudentScatterChart(student, classData); // 削除済み
+      createStudentBreakdownChart(student);
+    }
+
+    // 生徒詳細ビュー 更新
+    function updateStudentView() {
+      const studentClassFilter = document.getElementById('student-class-filter');
+      const studentFilter = document.getElementById('student-filter');
+      if (studentClassFilter) {
+        currentClassId = studentClassFilter.value;
+      }
+      if (studentFilter && studentFilter.value) {
+        currentStudentId = studentFilter.value;
+      } else if (studentFilter && studentFilter.options.length === 0) {
+        currentStudentId = null;
+      }
+      const classFilter = document.getElementById('class-filter');
+      if (classFilter) {
+        classFilter.value = currentClassId;
+      }
+      renderStudentViewContent();
+    }
+
+
+    // ####################
+    // メインロジック (タブ切り替え・初期化)
+    // ####################
+
+    function showView(view) {
+      // 全ビューを非表示
+      document.getElementById('school-view').classList.add('hidden');
+      document.getElementById('class-view').classList.add('hidden');
+      document.getElementById('student-view').classList.add('hidden');
+      // 全タブを非アクティブ
+      document.getElementById('tab-school').classList.replace('tab-active', 'tab-inactive');
+      document.getElementById('tab-class').classList.replace('tab-active', 'tab-inactive');
+      document.getElementById('tab-student').classList.replace('tab-active', 'tab-inactive');
+
+      // 対象ビューを表示
+      document.getElementById(`${view}-view`).classList.remove('hidden');
+      // 対象タブをアクティブ化
+      document.getElementById(`tab-${view}`).classList.replace('tab-inactive', 'tab-active');
+
+      // 各ビューの更新
+      if (view === 'school') {
+        updateSchoolView();
+      } else if (view === 'class') {
+        updateClassView();
+      } else if (view === 'student') {
+        // 生徒詳細タブを開いた時、フィルタが初期化されるように
+        const studentClassSelect = document.getElementById('student-class-filter');
+        if (studentClassSelect) {
+          studentClassSelect.value = currentClassId;
+        }
+        populateStudentFilter(currentClassId); // クラスフィルタの現在の値に基づいて生徒フィルタを更新
+        updateStudentView(); // フィルタに基づいてコンテンツを描画
+      }
+    }
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeClassSelectors();
+      populateStudentFilter(currentClassId);
+
+      updatePeriodMetrics();
+
+      // 学校全体
+      document.getElementById('grade-filter').addEventListener('change', updateSchoolView);
+      document.querySelectorAll('[data-period-button]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const period = btn.dataset.period;
+          if (!period || period === currentPeriod) return;
+          currentPeriod = period;
+          updatePeriodMetrics();
+        });
+      });
+
+      // クラス詳細
+      document.getElementById('class-filter').addEventListener('change', updateClassView);
+      document.querySelectorAll('#class-view .sortable').forEach(header => {
+        header.addEventListener('click', () => {
+          const column = header.dataset.sort;
+          const order = (column === currentSort.column && currentSort.order === 'asc') ? 'desc' : 'asc';
+          currentSort = { column, order };
+          updateClassView();
+        });
+      });
+
+      // 生徒詳細
+      document.getElementById('student-class-filter').addEventListener('change', (e) => {
+        currentClassId = e.target.value;
+        populateStudentFilter(currentClassId); // クラス変更時に生徒フィルタを更新
+        updateStudentView();
+      });
+      document.getElementById('student-filter').addEventListener('change', (e) => {
+        currentStudentId = e.target.value;
+        updateStudentView();
+      });
+
+      // 学校全体ビューを最初に表示
+      showView('school');
+    });
+
+  </script>
+</body>
+
+</html>
