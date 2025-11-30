@@ -16,14 +16,14 @@ rectangle "マグナ側システム" {
 rectangle "生徒・教員・組織マスタ\n（Google スプレッドシート）" {
   component RosterSheet as "生徒名簿シート\n(user_directory_sheets)"
   component TeacherSheet as "教員権限シート\n(teacher_access_rules_sheets)"
-  component SchoolSheet as "学校・ブランドマスタシート\n(school_master_sheets)"
+  component OrgSheet as "組織マスタシート\n(organization_master_sheets)"
 }
 
 rectangle "GCP / BigQuery" {
   database BQRaw as "raw_learning_events\n(学習イベントログ)"
   database BQUser as "user_directory\n(生徒マスタ)"
   database BQTeacher as "teacher_access_rules\n(教員権限マスタ)"
-  database BQSchool as "school_master\n(学校・ブランド情報)"
+  database BQOrg as "organization_master\n(組織マスタ情報\n= 学校/塾/自治体/塾ブランド)"
   database BQSummary as "aggregate_daily_student_summary\n(日次×生徒の集計テーブル)"
   database BQViews as "v_dashboard_*_rls\n(ダッシュボード用RLSビュー)"
 }
@@ -41,20 +41,20 @@ RawSrc --> BQRaw : ETLパイプラインで連携\n(SakuraCloud + GCS + Cloud Fu
 
 ' --- マスタ入力の流れ ---
 
-Internal --> RosterSheet : 生徒名簿を入力\nuser_id, 学校, 学年, クラス, brand...
+Internal --> RosterSheet : 生徒名簿を入力\nuser_id, 学校, 学年, クラス, 組織ID...
 Internal --> TeacherSheet : 先生のメールアドレスと\n担当範囲を入力\n(teacher_email, school_id, grade, class_id...)
-Internal --> SchoolSheet : 学校名・ブランド・自治体IDなどを管理\n(school_id, brand_id, municipality_id...)
+Internal --> OrgSheet : 学校名・塾・塾ブランド・自治体IDなどを管理\n(organization_id, school_id, cram_id,\n cram_brand_id, municipality_id ...)
 
 RosterSheet --> BQUser : Sheets コネクタで同期
 TeacherSheet --> BQTeacher : Sheets コネクタで同期
-SchoolSheet --> BQSchool : Sheets コネクタで同期
+OrgSheet --> BQOrg : Sheets コネクタで同期
 
 ' --- 集計処理 ---
 
 ' 日次×生徒の集計（user_directory をJOIN）
 BQRaw --> BQSummary : user_id でJOINし\n日次×生徒で集計
 BQUser --> BQSummary
-BQSchool --> BQSummary : school_id / brand_id でJOIN\n(自治体・ブランド粒度の集計用)
+BQOrg --> BQSummary : school_id / cram_brand_id / municipality_id などでJOIN\n(自治体・塾ブランド・塾粒度の集計用)
 
 ' --- ダッシュボード用ビュー + 行レベルセキュリティ ---
 
@@ -66,7 +66,7 @@ Dashboard --> BQViews : 担当範囲に応じた集計クエリ
 
 note right of BQSummary
   ここで初めて計算できるもの:
-  - 自治体 / 塾ブランドごとの利用状況
+  - 自治体 / 塾ブランド / 塾ごとの利用状況
   - 学校・学年・クラス・個人別の指標
   - 学習時間・マスター数などの時間系指標
 end note
@@ -89,7 +89,7 @@ note bottom
   ポイント:
   - ダッシュボードは Looker Studio のまま
   - 新しい認証システムは作らない
-  - 学校/学年/クラス/個人/自治体/塾ブランドの粒度は
+  - 学校/学年/クラス/個人/自治体/塾ブランド/塾の粒度は
     aggregate_daily_student_summary を基盤に、
     teacher_access_rules を使った RLSビュー
     (v_dashboard_*_rls) で制御する
